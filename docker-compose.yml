@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # База данных MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: equestrian_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: equestrian_crm
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "admin", "--password", "password123", "--authenticationDatabase", "equestrian_crm", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - equestrian_network
+
+  # Кеш Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: equestrian_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - equestrian_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: equestrian_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/equestrian_crm?authSource=equestrian_crm
+      JWT_SECRET: surikat
+      JWT_EXPIRE: 7d
+      FRONTEND_URL: http://localhost:5173
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - equestrian_network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: equestrian_frontend
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://backend:5000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - equestrian_network
+
+  # Nginx обратный прокси
+  nginx:
+    image: nginx:alpine
+    container_name: equestrian_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - equestrian_network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  equestrian_network:
+    driver: bridge

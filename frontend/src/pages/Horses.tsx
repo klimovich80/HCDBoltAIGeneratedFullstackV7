@@ -1,0 +1,218 @@
+import React, { useState, useEffect } from 'react'
+import { Search, Plus, Edit, Eye } from 'lucide-react'
+import { apiClient } from '../lib/api'
+
+interface Horse {
+  _id: string
+  name: string
+  breed: string
+  age: number
+  gender: 'mare' | 'stallion' | 'gelding'
+  color: string
+  boardingType: 'full' | 'partial' | 'pasture'
+  stallNumber?: string
+  vaccinationStatus: 'current' | 'due' | 'overdue'
+  owner?: {
+    firstName: string
+    lastName: string
+  }
+}
+
+const Horses: React.FC = () => {
+  const [horses, setHorses] = useState<Horse[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+
+  useEffect(() => {
+    const fetchHorses = () => {
+      apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        .then(response => {
+          if (response.success) {
+            setHorses(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch horses:', error)
+          // Устанавливаем демо данные для разработки
+          setHorses([
+            {
+              _id: '1',
+              name: 'Thunder',
+              breed: 'Thoroughbred',
+              age: 8,
+              gender: 'gelding',
+              color: 'Bay',
+              boardingType: 'full',
+              stallNumber: 'S01',
+              vaccinationStatus: 'current',
+              owner: { firstName: 'Emma', lastName: 'Williams' }
+            },
+            {
+              _id: '2',
+              name: 'Moonlight',
+              breed: 'Arabian',
+              age: 12,
+              gender: 'mare',
+              color: 'Gray',
+              boardingType: 'full',
+              stallNumber: 'S02',
+              vaccinationStatus: 'current',
+              owner: { firstName: 'James', lastName: 'Brown' }
+            },
+            {
+              _id: '3',
+              name: 'Star',
+              breed: 'Quarter Horse',
+              age: 6,
+              gender: 'mare',
+              color: 'Chestnut',
+              boardingType: 'partial',
+              stallNumber: 'S03',
+              vaccinationStatus: 'due',
+              owner: { firstName: 'Sophie', lastName: 'Davis' }
+            }
+          ])
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    }
+
+    fetchHorses()
+  }, [])
+
+  const filteredHorses = horses.filter(horse =>
+    horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    horse.breed.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const getVaccinationStatusColor = (status: string) => {
+    switch (status) {
+      case 'current': return 'bg-green-100 text-green-800'
+      case 'due': return 'bg-yellow-100 text-yellow-800'
+      case 'overdue': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getBoardingTypeLabel = (type: string) => {
+    switch (type) {
+      case 'full': return 'Полное содержание'
+      case 'partial': return 'Частичное содержание'
+      case 'pasture': return 'Пастбищное содержание'
+      default: return type
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Лошади</h1>
+          <p className="text-gray-600">Управляйте лошадьми и их информацией</p>
+        </div>
+        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2">
+          <Plus className="h-4 w-4" />
+          <span>Добавить лошадь</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Поиск лошадей..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Лошадь
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Детали
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Содержание
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Владелец
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Вакцинация
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Действия
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredHorses.map((horse) => (
+                <tr key={horse._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{horse.name}</div>
+                      <div className="text-sm text-gray-500">{horse.breed}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {horse.age} лет • {horse.gender === 'mare' ? 'кобыла' : horse.gender === 'stallion' ? 'жеребец' : 'мерин'} • {horse.color}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm text-gray-900">{getBoardingTypeLabel(horse.boardingType)}</div>
+                      {horse.stallNumber && (
+                        <div className="text-sm text-gray-500">Денник {horse.stallNumber}</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {horse.owner ? `${horse.owner.firstName} ${horse.owner.lastName}` : 'Школьная лошадь'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getVaccinationStatusColor(horse.vaccinationStatus)}`}>
+                      {horse.vaccinationStatus === 'current' ? 'актуальна' : horse.vaccinationStatus === 'due' ? 'требуется' : 'просрочена'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button className="text-indigo-600 hover:text-indigo-900">
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-900">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Horses

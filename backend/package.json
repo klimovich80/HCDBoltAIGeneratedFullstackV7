@@ -1,0 +1,55 @@
+{
+  "name": "equestrian-crm-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Equestrian CRM System",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "migrate": "node src/scripts/migrate.js",
+    "seed": "node src/scripts/seed.js",
+    "build": "echo 'No build step required for Node.js'"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5",
+    "morgan": "^1.10.1",
+    "winston": "^3.17.0",
+    "dotenv": "^16.3.1",
+    "multer": "^2.0.2",
+    "joi": "^17.11.0",
+    "express-validator": "^7.0.1",
+    "nodemailer": "^6.9.7",
+    "socket.io": "^4.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "eslint": "^9.19.0",
+    "@babel/core": "^7.23.6",
+    "@babel/eslint-parser": "^7.23.3",
+    "@types/jest": "^29.5.8",
+    "glob": "^11.0.0",
+    "rimraf": "^6.0.1",
+    "@eslint/js": "^9.19.0",
+    "@eslint/object-schema": "^2.1.4",
+    "@eslint/config-array": "^0.19.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
