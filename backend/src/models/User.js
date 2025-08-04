@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    //unique: true, //TODO
+    unique: true,
     lowercase: true,
     trim: true
   },
@@ -46,6 +46,10 @@ const userSchema = new mongoose.Schema({
   is_active: {
     type: Boolean,
     default: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
@@ -54,6 +58,7 @@ const userSchema = new mongoose.Schema({
 // Индексы
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1 });
 
 // Хешируем пароль перед сохранением
 userSchema.pre('save', function (next) {

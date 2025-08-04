@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/', auth, authorize('admin'), (req, res) => {
   const handleGetUsers = () => {
     const { page = 1, limit = 10, role } = req.query;
-    
+
     let query = {};
     if (role) query.role = role;
 
@@ -21,22 +21,22 @@ router.get('/', auth, authorize('admin'), (req, res) => {
         .sort({ createdAt: -1 }),
       User.countDocuments(query)
     ])
-    .then(([users, total]) => {
-      res.json({
-        success: true,
-        data: users,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
+      .then(([users, total]) => {
+        res.json({
+          success: true,
+          data: users,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        });
+      })
+      .catch(error => {
+        logger.error('Ошибка получения пользователей:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
       });
-    })
-    .catch(error => {
-      logger.error('Ошибка получения пользователей:', error);
-      res.status(500).json({ message: 'Ошибка сервера' });
-    });
   };
 
   handleGetUsers();
@@ -53,8 +53,8 @@ router.get('/:id', auth, (req, res) => {
         }
 
         // Пользователи могут видеть только свой профиль, если они не администратор/тренер
-        if (req.user.userId.toString() !== req.params.id && 
-            !['admin', 'trainer'].includes(req.user.role)) {
+        if (req.user.userId.toString() !== req.params.id &&
+          !['admin', 'trainer'].includes(req.user.role)) {
           res.status(403).json({ message: 'Доступ запрещен' });
           return;
         }
@@ -131,6 +131,18 @@ router.delete('/:id', auth, authorize('admin'), (req, res) => {
           return;
         }
 
+        // Prevent deleting the last admin
+        if (user.role === 'admin') {
+          return User.countDocuments({ role: 'admin', _id: { $ne: req.params.id } })
+            .then(adminCount => {
+              if (adminCount === 0) {
+                res.status(400).json({ message: 'Нельзя удалить последнего администратора' });
+                return;
+              }
+              return user.deleteOne();
+            });
+        }
+
         return user.deleteOne();
       })
       .then(result => {
@@ -150,6 +162,53 @@ router.delete('/:id', auth, authorize('admin'), (req, res) => {
   };
 
   handleDeleteUser();
+});
+
+// Архивировать/восстановить пользователя (только администратор)
+router.patch('/:id/archive', auth, authorize('admin'), (req, res) => {
+  const handleArchiveUser = () => {
+    User.findById(req.params.id)
+      .then(user => {
+        if (!user) {
+          res.status(404).json({ message: 'Пользователь не найден' });
+          return;
+        }
+
+        // Prevent archiving the last admin
+        if (user.role === 'admin' && user.isActive !== false) {
+          return User.countDocuments({ role: 'admin', isActive: { $ne: false }, _id: { $ne: req.params.id } })
+            .then(activeAdminCount => {
+              if (activeAdminCount === 0) {
+                res.status(400).json({ message: 'Нельзя архивировать последнего активного администратора' });
+                return;
+              }
+              user.isActive = req.body.isActive !== undefined ? req.body.isActive : !user.isActive;
+              return user.save();
+            });
+        }
+
+        user.isActive = req.body.isActive !== undefined ? req.body.isActive : !user.isActive;
+        return user.save();
+      })
+      .then(updatedUser => {
+        if (!updatedUser) return;
+
+        const action = updatedUser.isActive !== false ? 'восстановлен' : 'архивирован';
+        logger.info(`Пользователь ${action}: ${updatedUser.email}`);
+
+        res.json({
+          success: true,
+          data: updatedUser,
+          message: `Пользователь успешно ${action}`
+        });
+      })
+      .catch(error => {
+        logger.error('Ошибка архивирования пользователя:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+      });
+  };
+
+  handleArchiveUser();
 });
 
 module.exports = router;
