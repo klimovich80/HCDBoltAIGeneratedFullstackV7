@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Search, Plus, Edit, Eye } from 'lucide-react'
 import { apiClient } from '../lib/api'
+import HorseForm from '../components/HorseForm'
 
 interface Horse {
   _id: string
@@ -22,6 +23,7 @@ const Horses: React.FC = () => {
   const [horses, setHorses] = useState<Horse[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
 
   useEffect(() => {
     const fetchHorses = () => {
@@ -81,6 +83,22 @@ const Horses: React.FC = () => {
     fetchHorses()
   }, [])
 
+  const handleAddSuccess = () => {
+    // Refresh the horses list
+    const fetchHorses = () => {
+      apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        .then(response => {
+          if (response.success) {
+            setHorses(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch horses:', error)
+        })
+    }
+    fetchHorses()
+  }
+
   const filteredHorses = horses.filter(horse =>
     horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     horse.breed.toLowerCase().includes(searchTerm.toLowerCase())
@@ -119,7 +137,10 @@ const Horses: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Лошади</h1>
           <p className="text-gray-600">Управляйте лошадьми и их информацией</p>
         </div>
-        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2">
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+        >
           <Plus className="h-4 w-4" />
           <span>Добавить лошадь</span>
         </button>
@@ -211,6 +232,12 @@ const Horses: React.FC = () => {
           </table>
         </div>
       </div>
+
+      <HorseForm
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        onSuccess={handleAddSuccess}
+      />
     </div>
   )
 }
