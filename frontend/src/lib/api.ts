@@ -9,6 +9,15 @@ class ApiClient {
     this.token = localStorage.getItem('token');
   }
 
+  setToken(token: string | null): void {
+    this.token = token;
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }
+
   private request<T>(
     endpoint: string,
     options: RequestInit = {}

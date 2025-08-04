@@ -306,4 +306,4 @@ cd backend && npm run test:watch
 ## 📞 Поддержка
 Создано с ❤️ для конного сообщества
 
-test token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODhmYmI3N2JlMWNkOTA2MzgwYjI1NjgiLCJyb2xlIjoibWVtYmVyIiwiaWF0IjoxNzU0MjUwMjI2LCJleHAiOjE3NTQ4NTUwMjZ9.MyuvgIgoAVoDNK1OCtj41gl_V4TE-egR8ZZYmPoPEug
+test token eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODkwMWMzYjc0YjA3M2VkMzQ4Zjg2MjMiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NTQyNzQ5NTEsImV4cCI6MTc1NDg3OTc1MX0.c_EUUPP-BIzvNmPO4grQazABroiS8uMN1-HbdYf2x48
