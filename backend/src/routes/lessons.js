@@ -9,9 +9,9 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, lessonType, instructor, member } = req.query;
-    
+
     let query = {};
-    
+
     if (status) query.status = status;
     if (lessonType) query.lessonType = lessonType;
     if (instructor) query.instructor = instructor;
@@ -57,7 +57,7 @@ router.get('/:id', auth, async (req, res) => {
       .populate('instructor', 'firstName lastName email phone')
       .populate('horse', 'name breed age')
       .populate('member', 'firstName lastName email phone');
-    
+
     if (!lesson) {
       return res.status(404).json({ message: 'Занятие не найдено' });
     }
@@ -105,7 +105,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id);
-    
+
     if (!lesson) {
       return res.status(404).json({ message: 'Занятие не найдено' });
     }
@@ -134,10 +134,74 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
 });
 
 // Удалить занятие
+router.delete('/:id', auth, authorize('admin', 'trainer'), (req, res) => {
+  const handleDeleteLesson = () => {
+    Lesson.findById(req.params.id)
+      .then(lesson => {
+        if (!lesson) {
+          res.status(404).json({ message: 'Занятие не найдено' });
+          return;
+        }
+
+        return lesson.deleteOne();
+      })
+      .then(result => {
+        if (!result) return;
+
+        logger.info(`Удалено занятие с ID: ${req.params.id}`);
+
+        res.json({
+          success: true,
+          message: 'Занятие успешно удалено'
+        });
+      })
+      .catch(error => {
+        logger.error('Ошибка удаления занятия:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+      });
+  };
+
+  handleDeleteLesson();
+});
+
+// Архивировать/восстановить занятие
+router.patch('/:id/archive', auth, authorize('admin', 'trainer'), (req, res) => {
+  const handleArchiveLesson = () => {
+    Lesson.findById(req.params.id)
+      .then(lesson => {
+        if (!lesson) {
+          res.status(404).json({ message: 'Занятие не найдено' });
+          return;
+        }
+
+        lesson.isActive = req.body.isActive !== undefined ? req.body.isActive : !lesson.isActive;
+        return lesson.save();
+      })
+      .then(updatedLesson => {
+        if (!updatedLesson) return;
+
+        const action = updatedLesson.isActive ? 'восстановлено' : 'архивировано';
+        logger.info(`Занятие ${action}: ${updatedLesson.title}`);
+
+        res.json({
+          success: true,
+          data: updatedLesson,
+          message: `Занятие успешно ${action}`
+        });
+      })
+      .catch(error => {
+        logger.error('Ошибка архивирования занятия:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
+      });
+  };
+
+  handleArchiveLesson();
+});
+
 router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id);
-    
+
     if (!lesson) {
       return res.status(404).json({ message: 'Занятие не найдено' });
     }

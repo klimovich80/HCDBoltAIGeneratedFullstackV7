@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Calendar, Clock, User } from 'lucide-react'
+import { Search, Plus, Calendar, Clock, User, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
+import LessonForm from '../components/LessonForm'
+import LessonDetail from '../components/LessonDetail'
 
 interface Lesson {
   _id: string
@@ -23,12 +25,21 @@ interface Lesson {
   status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
   cost: number
   paymentStatus: 'pending' | 'paid' | 'overdue'
+  isActive?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 const Lessons: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [viewingLesson, setViewingLesson] = useState<Lesson | null>(null)
+  const [showDetailView, setShowDetailView] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     const fetchLessons = () => {
@@ -79,7 +90,8 @@ const Lessons: React.FC = () => {
               lessonType: 'group',
               status: 'scheduled',
               cost: 65,
-              paymentStatus: 'pending'
+              paymentStatus: 'pending',
+              isActive: true
             }
           ])
         })
@@ -91,11 +103,97 @@ const Lessons: React.FC = () => {
     fetchLessons()
   }, [])
 
+  const handleAddSuccess = () => {
+    // Refresh the lessons list
+    const fetchLessons = () => {
+      apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
+        .then(response => {
+          if (response.success) {
+            setLessons(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch lessons:', error)
+        })
+    }
+    fetchLessons()
+  }
+
+  const handleEditLesson = (lesson: Lesson) => {
+    setEditingLesson(lesson)
+    setShowEditForm(true)
+  }
+
+  const handleEditSuccess = () => {
+    // Refresh the lessons list
+    const fetchLessons = () => {
+      apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
+        .then(response => {
+          if (response.success) {
+            setLessons(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch lessons:', error)
+        })
+    }
+    fetchLessons()
+    setEditingLesson(null)
+  }
+
+  const handleCloseEditForm = () => {
+    setShowEditForm(false)
+    setEditingLesson(null)
+  }
+
+  const handleViewLesson = (lesson: Lesson) => {
+    setViewingLesson(lesson)
+    setShowDetailView(true)
+  }
+
+  const handleCloseDetailView = () => {
+    setShowDetailView(false)
+    setViewingLesson(null)
+  }
+
+  const handleDeleteLesson = async (lesson: Lesson) => {
+    if (window.confirm(`Вы уверены, что хотите удалить занятие "${lesson.title}"? Это действие нельзя отменить.`)) {
+      try {
+        await apiClient.delete('lessons', lesson._id)
+        // Refresh the lessons list
+        const response = await apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
+        if (response.success) {
+          setLessons(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to delete lesson:', error)
+        alert('Ошибка при удалении занятия')
+      }
+    }
+  }
+
+  const handleArchiveLesson = async (lesson: Lesson) => {
+    if (window.confirm(`Вы уверены, что хотите ${lesson.isActive ? 'архивировать' : 'восстановить'} занятие "${lesson.title}"?`)) {
+      try {
+        await apiClient.update('lessons', lesson._id, { isActive: !lesson.isActive })
+        // Refresh the lessons list
+        const response = await apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
+        if (response.success) {
+          setLessons(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to archive/restore lesson:', error)
+        alert('Ошибка при архивировании/восстановлении занятия')
+      }
+    }
+  }
+
   const filteredLessons = lessons.filter(lesson =>
     lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lesson.member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     lesson.member.lastName.toLowerCase().includes(searchTerm.toLowerCase())
   )
+  .filter(lesson => showArchived ? true : lesson.isActive !== false)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,7 +247,10 @@ const Lessons: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Занятия</h1>
           <p className="text-gray-600">Управляйте расписанием занятий и бронированием</p>
         </div>
-        <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2">
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
+        >
           <Plus className="h-4 w-4" />
           <span>Запланировать занятие</span>
         </button>
@@ -157,15 +258,28 @@ const Lessons: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск занятий..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex justify-between items-center">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск занятий..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Показать архивированные</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -191,14 +305,24 @@ const Lessons: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Оплата
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Действия
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLessons.map((lesson) => (
-                <tr key={lesson._id} className="hover:bg-gray-50">
+                <tr key={lesson._id} className={`hover:bg-gray-50 ${lesson.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{lesson.title}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {lesson.title}
+                        {lesson.isActive === false && (
+                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Архивировано
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-500 capitalize">
                         {lesson.lessonType === 'private' ? 'индивидуальное' : lesson.lessonType === 'group' ? 'групповое' : 'тренировка'}
                       </div>
@@ -250,12 +374,65 @@ const Lessons: React.FC = () => {
                       </span>
                     </div>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewLesson(lesson)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Просмотр информации о занятии"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleEditLesson(lesson)}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Редактировать занятие"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleArchiveLesson(lesson)}
+                        className={`${lesson.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
+                        title={lesson.isActive === false ? 'Восстановить занятие' : 'Архивировать занятие'}
+                      >
+                        {lesson.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteLesson(lesson)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Удалить занятие"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      <LessonForm
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        onSuccess={handleAddSuccess}
+        mode="create"
+      />
+
+      <LessonForm
+        isOpen={showEditForm}
+        onClose={handleCloseEditForm}
+        onSuccess={handleEditSuccess}
+        lesson={editingLesson}
+        mode="edit"
+      />
+
+      <LessonDetail
+        isOpen={showDetailView}
+        onClose={handleCloseDetailView}
+        lesson={viewingLesson}
+      />
     </div>
   )
 }

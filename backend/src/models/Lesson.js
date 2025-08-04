@@ -59,6 +59,10 @@ const lessonSchema = new mongoose.Schema({
   notes: {
     type: String,
     trim: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
 }, {
   timestamps: true
@@ -69,5 +73,6 @@ lessonSchema.index({ scheduledDate: 1 });
 lessonSchema.index({ instructor: 1 });
 lessonSchema.index({ member: 1 });
 lessonSchema.index({ status: 1 });
+lessonSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Lesson', lessonSchema);
