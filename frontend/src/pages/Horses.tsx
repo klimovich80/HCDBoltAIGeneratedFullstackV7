@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Edit, Eye, Archive, RotateCcw } from 'lucide-react'
+import { Search, Plus, Edit, Eye, Archive, RotateCcw, Trash2 } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
 import HorseDetail from '../components/HorseDetail'
@@ -178,6 +178,22 @@ const Horses: React.FC = () => {
     }
   }
 
+  const handleDeleteHorse = async (horse: Horse) => {
+    if (window.confirm(`Вы уверены, что хотите УДАЛИТЬ лошадь "${horse.name}"? Это действие нельзя отменить и удалит все связанные данные (занятия, платежи и т.д.).`)) {
+      try {
+        await apiClient.delete('horses', horse._id)
+        // Refresh the horses list
+        const response = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        if (response.success) {
+          setHorses(response.data)
+        }
+        alert('Лошадь успешно удалена')
+      } catch (error) {
+        console.error('Failed to delete horse:', error)
+        alert('Ошибка при удалении лошади')
+      }
+    }
+  }
   const filteredHorses = horses.filter(horse =>
     (horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
      horse.breed.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -351,6 +367,13 @@ const Horses: React.FC = () => {
                         title={horse.isActive === false ? 'Восстановить лошадь' : 'Архивировать лошадь'}
                       >
                         {horse.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteHorse(horse)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Удалить лошадь"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
