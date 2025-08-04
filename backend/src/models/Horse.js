@@ -85,5 +85,6 @@ horseSchema.index({ name: 1 });
 horseSchema.index({ breed: 1 });
 horseSchema.index({ owner: 1 });
 horseSchema.index({ stallNumber: 1 });
+horseSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Horse', horseSchema);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Edit, Eye } from 'lucide-react'
+import { Search, Plus, Edit, Eye, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
 import HorseDetail from '../components/HorseDetail'
@@ -14,6 +14,7 @@ interface Horse {
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   vaccinationStatus: 'current' | 'due' | 'overdue'
+  isActive?: boolean
   owner?: {
     firstName: string
     lastName: string
@@ -29,6 +30,7 @@ const Horses: React.FC = () => {
   const [showEditForm, setShowEditForm] = useState(false)
   const [viewingHorse, setViewingHorse] = useState<Horse | null>(null)
   const [showDetailView, setShowDetailView] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     const fetchHorses = () => {
@@ -52,6 +54,7 @@ const Horses: React.FC = () => {
               boardingType: 'full',
               stallNumber: 'S01',
               vaccinationStatus: 'current',
+              isActive: true,
               owner: { firstName: 'Emma', lastName: 'Williams' }
             },
             {
@@ -64,6 +67,7 @@ const Horses: React.FC = () => {
               boardingType: 'full',
               stallNumber: 'S02',
               vaccinationStatus: 'current',
+              isActive: true,
               owner: { firstName: 'James', lastName: 'Brown' }
             },
             {
@@ -76,7 +80,21 @@ const Horses: React.FC = () => {
               boardingType: 'partial',
               stallNumber: 'S03',
               vaccinationStatus: 'due',
+              isActive: true,
               owner: { firstName: 'Sophie', lastName: 'Davis' }
+            },
+            {
+              _id: '4',
+              name: 'Retired Champion',
+              breed: 'Warmblood',
+              age: 20,
+              gender: 'gelding',
+              color: 'Black',
+              boardingType: 'pasture',
+              stallNumber: '',
+              vaccinationStatus: 'current',
+              isActive: false,
+              owner: { firstName: 'Former', lastName: 'Owner' }
             }
           ])
         })
@@ -141,9 +159,26 @@ const Horses: React.FC = () => {
     setViewingHorse(null)
   }
 
+  const handleArchiveHorse = async (horse: Horse) => {
+    if (window.confirm(`Вы уверены, что хотите ${horse.isActive ? 'архивировать' : 'восстановить'} лошадь "${horse.name}"?`)) {
+      try {
+        await apiClient.update('horses', horse._id, { isActive: !horse.isActive })
+        // Refresh the horses list
+        const response = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        if (response.success) {
+          setHorses(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to archive/restore horse:', error)
+        alert('Ошибка при архивировании/восстановлении лошади')
+      }
+    }
+  }
+
   const filteredHorses = horses.filter(horse =>
-    horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    horse.breed.toLowerCase().includes(searchTerm.toLowerCase())
+    (horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     horse.breed.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (showArchived ? !horse.isActive : horse.isActive !== false)
   )
 
   const getVaccinationStatusColor = (status: string) => {
@@ -190,15 +225,28 @@ const Horses: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск лошадей..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex justify-between items-center">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск лошадей..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Показать архивированные</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -228,10 +276,17 @@ const Horses: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredHorses.map((horse) => (
-                <tr key={horse._id} className="hover:bg-gray-50">
+                <tr key={horse._id} className={`hover:bg-gray-50 ${horse.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{horse.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {horse.name}
+                        {horse.isActive === false && (
+                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Архивировано
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-500">{horse.breed}</div>
                     </div>
                   </td>
@@ -273,6 +328,13 @@ const Horses: React.FC = () => {
                         title="Редактировать лошадь"
                       >
                         <Edit className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleArchiveHorse(horse)}
+                        className={`${horse.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
+                        title={horse.isActive === false ? 'Восстановить лошадь' : 'Архивировать лошадь'}
+                      >
+                        {horse.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                       </button>
                     </div>
                   </td>
