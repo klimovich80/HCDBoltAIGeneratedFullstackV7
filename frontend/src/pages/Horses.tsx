@@ -196,7 +196,7 @@ const Horses: React.FC = () => {
   }
   const filteredHorses = horses.filter(horse =>
     (horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     horse.breed.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      horse.breed.toLowerCase().includes(searchTerm.toLowerCase())) &&
     (showArchived ? !horse.isActive : horse.isActive !== false)
   )
 

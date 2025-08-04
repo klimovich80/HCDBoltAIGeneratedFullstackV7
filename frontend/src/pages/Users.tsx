@@ -31,20 +31,7 @@ const Users: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
-  // Разрешить доступ только администраторам и тренерам
-  if (!currentUser || !['admin', 'trainer'].includes(currentUser.role)) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900">Доступ запрещен</h3>
-          <p className="text-gray-600">У вас нет разрешения на просмотр этой страницы.</p>
-        </div>
-      </div>
-    )
-  }
-
-  useEffect(() => {
+    useEffect(() => {
     const fetchUsers = () => {
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
@@ -129,13 +116,28 @@ const Users: React.FC = () => {
     fetchUsers()
   }, [])
 
+  // Разрешить доступ только администраторам и тренерам
+  if (!currentUser || !['admin', 'trainer'].includes(currentUser.role)) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">Доступ запрещен</h3>
+          <p className="text-gray-600">У вас нет разрешения на просмотр этой страницы.</p>
+        </div>
+      </div>
+    )
+  }
+
   const handleAddSuccess = () => {
     // Refresh the users list
     const fetchUsers = () => {
+      console.log('Fetching users...')
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
           if (response.success) {
             setUsers(response.data)
+            console.log('Users:', response.data)
           }
         })
         .catch(error => {
@@ -214,7 +216,8 @@ const Users: React.FC = () => {
     user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  ).filter(user => showArchived ? true : user.isActive !== false)
+  )
+    //.filter(user => showArchived ? true : user.isActive !== false)
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -260,8 +263,8 @@ const Users: React.FC = () => {
           <p className="text-gray-600">Управляйте учетными записями пользователей и разрешениями</p>
         </div>
         {currentUser.role === 'admin' && (
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2">
-            <Plus className="h-4 w-4" onClick={() => setShowAddForm(true)} />
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2" onClick={() => setShowAddForm(true)}>
+            <Plus className="h-4 w-4" />
             <span>Добавить пользователя</span>
           </button>
         )}
@@ -388,13 +391,18 @@ const Users: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-indigo-600 hover:text-indigo-900">
-                        <Eye className="h-4 w-4" onClick={() => handleViewUser(user)} title="Просмотр информации о пользователе" />
+                      <button
+                        className="text-indigo-600 hover:text-indigo-900"
+                        onClick={() => handleViewUser(user)} 
+                        title="Просмотр информации о пользователе">
+                        <Eye className="h-4 w-4" />
                       </button>
                       {currentUser.role === 'admin' && (
                         <>
-                          <button className="text-gray-600 hover:text-gray-900">
-                            <Edit className="h-4 w-4" onClick={() => handleEditUser(user)} title="Редактировать пользователя" />
+                          <button className="text-gray-600 hover:text-gray-900"
+                            onClick={() => handleEditUser(user)} 
+                            title="Редактировать пользователя">
+                            <Edit className="h-4 w-4" />
                           </button>
                           <button 
                             onClick={() => handleArchiveUser(user)}
@@ -410,9 +418,6 @@ const Users: React.FC = () => {
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                        <button className="text-gray-600 hover:text-gray-900">
-                          Редактировать
-                        </button>
                         </>
                       )}
                     </div>

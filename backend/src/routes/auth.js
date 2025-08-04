@@ -27,12 +27,12 @@ router.post('/register', (req, res) => {
           password,
           role
         };
-        
+
         return User.create(userData);
       })
       .then(user => {
         if (!user) return;
-        
+
         // Генерируем JWT токен
         const token = jwt.sign(
           { userId: user._id, role: user.role },
@@ -91,7 +91,7 @@ router.post('/login', (req, res) => {
               { expiresIn: process.env.JWT_EXPIRE || '7d' }
             );
 
-            logger.info(`Пользователь вошел в систему: ${email}`);
+            //logger.info(`Пользователь вошел в систему: ${email}`);
 
             res.json({
               success: true,
