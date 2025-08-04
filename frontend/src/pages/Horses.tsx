@@ -11,6 +11,7 @@ interface Horse {
   age: number
   gender: 'mare' | 'stallion' | 'gelding'
   color: string
+  profileImage?: string
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   vaccinationStatus: 'current' | 'due' | 'overdue'
@@ -51,6 +52,7 @@ const Horses: React.FC = () => {
               age: 8,
               gender: 'gelding',
               color: 'Bay',
+              profileImage: 'https://images.pexels.com/photos/1996333/pexels-photo-1996333.jpeg?auto=compress&cs=tinysrgb&w=400',
               boardingType: 'full',
               stallNumber: 'S01',
               vaccinationStatus: 'current',
@@ -64,6 +66,7 @@ const Horses: React.FC = () => {
               age: 12,
               gender: 'mare',
               color: 'Gray',
+              profileImage: 'https://images.pexels.com/photos/1996334/pexels-photo-1996334.jpeg?auto=compress&cs=tinysrgb&w=400',
               boardingType: 'full',
               stallNumber: 'S02',
               vaccinationStatus: 'current',
@@ -278,7 +281,20 @@ const Horses: React.FC = () => {
               {filteredHorses.map((horse) => (
                 <tr key={horse._id} className={`hover:bg-gray-50 ${horse.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
+                    <div className="flex items-center">
+                      {horse.profileImage ? (
+                        <img
+                          src={horse.profileImage}
+                          alt={horse.name}
+                          className="h-10 w-10 rounded-full object-cover mr-3"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-gray-600 text-xs font-medium">
+                            {horse.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
                       <div className="text-sm font-medium text-gray-900">
                         {horse.name}
                         {horse.isActive === false && (

@@ -9,6 +9,7 @@ interface HorseFormData {
   gender: 'mare' | 'stallion' | 'gelding'
   color: string
   markings?: string
+  profileImage?: string
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   medicalNotes?: string
@@ -34,6 +35,7 @@ interface Horse {
   gender: 'mare' | 'stallion' | 'gelding'
   color: string
   markings?: string
+  profileImage?: string
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   medicalNotes?: string
@@ -57,6 +59,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
     gender: 'gelding',
     color: '',
     markings: '',
+    profileImage: '',
     boardingType: 'full',
     stallNumber: '',
     medicalNotes: '',
@@ -67,6 +70,8 @@ const HorseForm: React.FC<HorseFormProps> = ({
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [imagePreview, setImagePreview] = useState<string>('')
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   // Update form data when horse prop changes
   useEffect(() => {
@@ -78,6 +83,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
         gender: horse.gender,
         color: horse.color,
         markings: horse.markings || '',
+        profileImage: horse.profileImage || '',
         boardingType: horse.boardingType,
         stallNumber: horse.stallNumber || '',
         medicalNotes: horse.medicalNotes || '',
@@ -86,6 +92,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
         insuranceInfo: horse.insuranceInfo || '',
         registrationNumber: horse.registrationNumber || ''
       })
+      setImagePreview(horse.profileImage || '')
     } else if (mode === 'create') {
       // Reset form for create mode
       setFormData({
@@ -95,6 +102,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
         gender: 'gelding',
         color: '',
         markings: '',
+        profileImage: '',
         boardingType: 'full',
         stallNumber: '',
         medicalNotes: '',
@@ -103,8 +111,64 @@ const HorseForm: React.FC<HorseFormProps> = ({
         insuranceInfo: '',
         registrationNumber: ''
       })
+      setImagePreview('')
     }
   }, [horse, mode])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Пожалуйста, выберите файл изображения')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Размер файла не должен превышать 5MB')
+      return
+    }
+
+    setUploadingImage(true)
+    setError('')
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('image', file)
+
+      // Upload to a simple image hosting service or convert to base64
+      // For demo purposes, we'll convert to base64
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const base64String = event.target?.result as string
+        setImagePreview(base64String)
+        setFormData(prev => ({
+          ...prev,
+          profileImage: base64String
+        }))
+        setUploadingImage(false)
+      }
+      reader.onerror = () => {
+        setError('Ошибка при загрузке изображения')
+        setUploadingImage(false)
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      setError('Ошибка при загрузке изображения')
+      setUploadingImage(false)
+    }
+  }
+
+  const removeImage = () => {
+    setImagePreview('')
+    setFormData(prev => ({
+      ...prev,
+      profileImage: ''
+    }))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,6 +180,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
       ...formData,
       markings: formData.markings || undefined,
       stallNumber: formData.stallNumber || undefined,
+      profileImage: formData.profileImage || undefined,
       medicalNotes: formData.medicalNotes || undefined,
       dietaryRestrictions: formData.dietaryRestrictions || undefined,
       insuranceInfo: formData.insuranceInfo || undefined,
@@ -171,6 +236,56 @@ const HorseForm: React.FC<HorseFormProps> = ({
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Profile Image Section */}
+          <div className="col-span-full">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Фотография лошади
+            </label>
+            <div className="flex items-center space-x-4">
+              {imagePreview ? (
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Horse preview"
+                    className="h-24 w-24 rounded-lg object-cover border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="h-24 w-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-400 text-xs">Нет фото</span>
+                </div>
+              )}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="horse-image-upload"
+                  disabled={uploadingImage}
+                />
+                <label
+                  htmlFor="horse-image-upload"
+                  className={`cursor-pointer inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 ${
+                    uploadingImage ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {uploadingImage ? 'Загрузка...' : 'Выбрать фото'}
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  JPG, PNG до 5MB
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>

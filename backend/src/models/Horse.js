@@ -31,6 +31,10 @@ const horseSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  profileImage: {
+    type: String,
+    trim: true
+  },
   owner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

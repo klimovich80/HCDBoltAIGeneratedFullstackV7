@@ -9,6 +9,7 @@ interface Horse {
   gender: 'mare' | 'stallion' | 'gelding'
   color: string
   markings?: string
+  profileImage?: string
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   medicalNotes?: string
@@ -79,9 +80,17 @@ const HorseDetail: React.FC<HorseDetailProps> = ({ isOpen, onClose, horse }) => 
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
-            <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center">
-              <Heart className="h-6 w-6 text-white" />
-            </div>
+            {horse.profileImage ? (
+              <img
+                src={horse.profileImage}
+                alt={horse.name}
+                className="h-16 w-16 rounded-full object-cover border-2 border-indigo-200"
+              />
+            ) : (
+              <div className="h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center">
+                <Heart className="h-8 w-8 text-white" />
+              </div>
+            )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{horse.name}</h2>
               <p className="text-gray-600">{horse.breed} • {getGenderLabel(horse.gender)}</p>
@@ -97,6 +106,19 @@ const HorseDetail: React.FC<HorseDetailProps> = ({ isOpen, onClose, horse }) => 
 
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Horse Image Section */}
+            {horse.profileImage && (
+              <div className="lg:col-span-2 mb-6">
+                <div className="flex justify-center">
+                  <img
+                    src={horse.profileImage}
+                    alt={horse.name}
+                    className="max-w-md w-full h-64 object-cover rounded-lg shadow-md"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Basic Information */}
             <div className="space-y-6">
               <div>
