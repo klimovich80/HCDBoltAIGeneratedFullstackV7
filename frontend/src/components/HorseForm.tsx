@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 
@@ -22,9 +22,34 @@ interface HorseFormProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  horse?: Horse | null
+  mode?: 'create' | 'edit'
 }
 
-const HorseForm: React.FC<HorseFormProps> = ({ isOpen, onClose, onSuccess }) => {
+interface Horse {
+  _id: string
+  name: string
+  breed: string
+  age: number
+  gender: 'mare' | 'stallion' | 'gelding'
+  color: string
+  markings?: string
+  boardingType: 'full' | 'partial' | 'pasture'
+  stallNumber?: string
+  medicalNotes?: string
+  dietaryRestrictions?: string
+  vaccinationStatus: 'current' | 'due' | 'overdue'
+  insuranceInfo?: string
+  registrationNumber?: string
+}
+
+const HorseForm: React.FC<HorseFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess, 
+  horse = null, 
+  mode = 'create' 
+}) => {
   const [formData, setFormData] = useState<HorseFormData>({
     name: '',
     breed: '',
@@ -43,6 +68,44 @@ const HorseForm: React.FC<HorseFormProps> = ({ isOpen, onClose, onSuccess }) => 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Update form data when horse prop changes
+  useEffect(() => {
+    if (horse && mode === 'edit') {
+      setFormData({
+        name: horse.name,
+        breed: horse.breed,
+        age: horse.age,
+        gender: horse.gender,
+        color: horse.color,
+        markings: horse.markings || '',
+        boardingType: horse.boardingType,
+        stallNumber: horse.stallNumber || '',
+        medicalNotes: horse.medicalNotes || '',
+        dietaryRestrictions: horse.dietaryRestrictions || '',
+        vaccinationStatus: horse.vaccinationStatus,
+        insuranceInfo: horse.insuranceInfo || '',
+        registrationNumber: horse.registrationNumber || ''
+      })
+    } else if (mode === 'create') {
+      // Reset form for create mode
+      setFormData({
+        name: '',
+        breed: '',
+        age: 1,
+        gender: 'gelding',
+        color: '',
+        markings: '',
+        boardingType: 'full',
+        stallNumber: '',
+        medicalNotes: '',
+        dietaryRestrictions: '',
+        vaccinationStatus: 'current',
+        insuranceInfo: '',
+        registrationNumber: ''
+      })
+    }
+  }, [horse, mode])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -59,29 +122,18 @@ const HorseForm: React.FC<HorseFormProps> = ({ isOpen, onClose, onSuccess }) => 
       registrationNumber: formData.registrationNumber || undefined
     }
 
-    apiClient.create('horses', cleanedData)
+    const apiCall = mode === 'edit' && horse
+      ? apiClient.update('horses', horse._id, cleanedData)
+      : apiClient.create('horses', cleanedData)
+
+    apiCall
       .then(() => {
         onSuccess()
         onClose()
-        // Reset form
-        setFormData({
-          name: '',
-          breed: '',
-          age: 1,
-          gender: 'gelding',
-          color: '',
-          markings: '',
-          boardingType: 'full',
-          stallNumber: '',
-          medicalNotes: '',
-          dietaryRestrictions: '',
-          vaccinationStatus: 'current',
-          insuranceInfo: '',
-          registrationNumber: ''
-        })
+        setError('')
       })
       .catch(err => {
-        setError(err.message || 'Failed to create horse')
+        setError(err.message || `Failed to ${mode} horse`)
       })
       .finally(() => {
         setLoading(false)
@@ -102,7 +154,9 @@ const HorseForm: React.FC<HorseFormProps> = ({ isOpen, onClose, onSuccess }) => 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Добавить лошадь</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {mode === 'edit' ? 'Редактировать лошадь' : 'Добавить лошадь'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -333,7 +387,10 @@ const HorseForm: React.FC<HorseFormProps> = ({ isOpen, onClose, onSuccess }) => 
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Создание...' : 'Создать лошадь'}
+              {loading 
+                ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
+                : (mode === 'edit' ? 'Сохранить изменения' : 'Создать лошадь')
+              }
             </button>
           </div>
         </form>

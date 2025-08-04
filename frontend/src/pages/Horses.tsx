@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Search, Plus, Edit, Eye } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
+import HorseDetail from '../components/HorseDetail'
 
 interface Horse {
   _id: string
@@ -24,6 +25,10 @@ const Horses: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [viewingHorse, setViewingHorse] = useState<Horse | null>(null)
+  const [showDetailView, setShowDetailView] = useState(false)
 
   useEffect(() => {
     const fetchHorses = () => {
@@ -97,6 +102,43 @@ const Horses: React.FC = () => {
         })
     }
     fetchHorses()
+  }
+
+  const handleEditHorse = (horse: Horse) => {
+    setEditingHorse(horse)
+    setShowEditForm(true)
+  }
+
+  const handleEditSuccess = () => {
+    // Refresh the horses list
+    const fetchHorses = () => {
+      apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        .then(response => {
+          if (response.success) {
+            setHorses(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch horses:', error)
+        })
+    }
+    fetchHorses()
+    setEditingHorse(null)
+  }
+
+  const handleCloseEditForm = () => {
+    setShowEditForm(false)
+    setEditingHorse(null)
+  }
+
+  const handleViewHorse = (horse: Horse) => {
+    setViewingHorse(horse)
+    setShowDetailView(true)
+  }
+
+  const handleCloseDetailView = () => {
+    setShowDetailView(false)
+    setViewingHorse(null)
   }
 
   const filteredHorses = horses.filter(horse =>
@@ -218,10 +260,18 @@ const Horses: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-indigo-600 hover:text-indigo-900">
+                      <button 
+                        onClick={() => handleViewHorse(horse)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Просмотр информации о лошади"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900">
+                      <button 
+                        onClick={() => handleEditHorse(horse)}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Редактировать лошадь"
+                      >
                         <Edit className="h-4 w-4" />
                       </button>
                     </div>
@@ -237,6 +287,21 @@ const Horses: React.FC = () => {
         isOpen={showAddForm}
         onClose={() => setShowAddForm(false)}
         onSuccess={handleAddSuccess}
+        mode="create"
+      />
+
+      <HorseForm
+        isOpen={showEditForm}
+        onClose={handleCloseEditForm}
+        onSuccess={handleEditSuccess}
+        horse={editingHorse}
+        mode="edit"
+      />
+
+      <HorseDetail
+        isOpen={showDetailView}
+        onClose={handleCloseDetailView}
+        horse={viewingHorse}
       />
     </div>
   )
