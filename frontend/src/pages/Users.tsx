@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Mail, Phone, Shield, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -35,12 +35,16 @@ const Users: React.FC = () => {
     const fetchUsers = () => {
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
+          console.log('intiating setting data on users page after good response', response)
           if (response.success) {
             setUsers(response.data)
+            console.log('Users 1:', users)
             return
           }
+          console.log('Users 2:', users)
         })
         .catch(error => {
+          console.error('Initiating demo data on Users page...')
           console.error('Failed to fetch users:', error)
           // Устанавливаем демо данные для разработки
           setUsers([
@@ -112,9 +116,10 @@ const Users: React.FC = () => {
           setLoading(false)
         })
     }
-
     fetchUsers()
-  }, [])
+    }, [])
+  
+  console.log('Users 3:', users)
 
   // Разрешить доступ только администраторам и тренерам
   if (!currentUser || !['admin', 'trainer'].includes(currentUser.role)) {
@@ -217,7 +222,9 @@ const Users: React.FC = () => {
     user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
-    //.filter(user => showArchived ? true : user.isActive !== false)
+//     .filter(user => showArchived ? true : user.isActive !== false
+// //console.log('Users 4(showing filtered users):', user)
+//   )
 
   const getRoleColor = (role: string) => {
     switch (role) {

@@ -87,6 +87,7 @@ class ApiClient {
 
   // Универсальные CRUD методы
   getAll<T>(resource: string, params?: Record<string, any>): Promise<T> {
+    console.log('geting   All', resource);
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.request<T>(`/${resource}${queryString}`);
   }

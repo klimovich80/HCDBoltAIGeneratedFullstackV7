@@ -25,7 +25,7 @@
 */
 
 -- Insert sample users (these will need to be created through Supabase auth first)
-INSERT INTO users (id, first_name, last_name, email, phone, role, membership_tier, emergency_contact_name, emergency_contact_phone) VALUES
+INSERT INTO users (id, firstName, lastName, email, phone, role, membership_tier, emergency_contact_name, emergency_contact_phone) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Admin', 'User', 'admin@equestrian.com', '+1-555-0001', 'admin', null, 'Emergency Contact', '+1-555-9999'),
   ('22222222-2222-2222-2222-222222222222', 'Sarah', 'Johnson', 'sarah.trainer@equestrian.com', '+1-555-0002', 'trainer', null, 'Mike Johnson', '+1-555-9998'),
   ('33333333-3333-3333-3333-333333333333', 'Michael', 'Chen', 'michael.trainer@equestrian.com', '+1-555-0003', 'trainer', null, 'Lisa Chen', '+1-555-9997'),
@@ -87,7 +87,7 @@ INSERT INTO feed_records (id, horse_id, feed_type, amount, unit, feeding_time, f
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert sample stall assignments
-INSERT INTO stall_assignments (id, stall_number, horse_id, assigned_date, monthly_rate, is_active) VALUES
+INSERT INTO stall_assignments (id, stall_number, horse_id, assigned_date, monthly_rate, isActive) VALUES
   ('s1111111-1111-1111-1111-111111111111', 'S01', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2024-11-01', 340.00, true),
   ('s2222222-2222-2222-2222-222222222222', 'S02', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '2024-10-15', 340.00, true),
   ('s3333333-3333-3333-3333-333333333333', 'S03', 'cccccccc-cccc-cccc-cccc-cccccccccccc', '2024-11-10', 280.00, true),

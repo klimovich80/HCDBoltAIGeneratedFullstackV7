@@ -21,8 +21,8 @@ router.post('/register', (req, res) => {
 
         // Создаем пользователя
         const userData = {
-          first_name: firstName,
-          last_name: lastName,
+          firsName,
+          lastName,
           email,
           password,
           role
@@ -47,8 +47,8 @@ router.post('/register', (req, res) => {
           token,
           user: {
             id: user._id,
-            firstName: user.first_name,
-            lastName: user.last_name,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.email,
             role: user.role
           }
@@ -98,8 +98,8 @@ router.post('/login', (req, res) => {
               token,
               user: {
                 id: user._id,
-                firstName: user.first_name,
-                lastName: user.last_name,
+                firstName: user.firstName,
+                lastName: user.lastName,
                 email: user.email,
                 role: user.role
               }

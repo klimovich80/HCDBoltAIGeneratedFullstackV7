@@ -27,8 +27,8 @@
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   auth_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  first_name text NOT NULL,
-  last_name text NOT NULL,
+  firstName text NOT NULL,
+  lastName text NOT NULL,
   email text UNIQUE NOT NULL,
   phone text,
   role text NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'trainer', 'member', 'guest')),
@@ -163,7 +163,7 @@ CREATE TABLE IF NOT EXISTS stall_assignments (
   assigned_date date NOT NULL DEFAULT CURRENT_DATE,
   monthly_rate decimal(10,2),
   notes text,
-  is_active boolean NOT NULL DEFAULT true,
+  isActive boolean NOT NULL DEFAULT true,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
