@@ -7,8 +7,8 @@ import UserDetail from '../components/UserDetail'
 
 interface User {
   _id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   phone?: string
   role: 'admin' | 'trainer' | 'member' | 'guest'
@@ -35,23 +35,18 @@ const Users: React.FC = () => {
     const fetchUsers = () => {
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
-          console.log('intiating setting data on users page after good response', response)
           if (response.success) {
             setUsers(response.data)
-            console.log('Users 1:', users)
             return
           }
-          console.log('Users 2:', users)
         })
         .catch(error => {
-          console.error('Initiating demo data on Users page...')
-          console.error('Failed to fetch users:', error)
           // Устанавливаем демо данные для разработки
           setUsers([
             {
               _id: '1',
-              firstName: 'Admin',
-              lastName: 'User',
+              first_name: 'Admin',
+              last_name: 'User',
               email: 'admin@equestrian.com',
               phone: '+1-555-0001',
               role: 'admin',
@@ -62,8 +57,8 @@ const Users: React.FC = () => {
             },
             {
               _id: '2',
-              firstName: 'Sarah',
-              lastName: 'Johnson',
+              first_name: 'Sarah',
+              last_name: 'Johnson',
               email: 'sarah.trainer@equestrian.com',
               phone: '+1-555-0002',
               role: 'trainer',
@@ -74,8 +69,8 @@ const Users: React.FC = () => {
             },
             {
               _id: '3',
-              firstName: 'Michael',
-              lastName: 'Chen',
+              first_name: 'Michael',
+              last_name: 'Chen',
               email: 'michael.trainer@equestrian.com',
               phone: '+1-555-0003',
               role: 'trainer',
@@ -86,8 +81,8 @@ const Users: React.FC = () => {
             },
             {
               _id: '4',
-              firstName: 'Emma',
-              lastName: 'Williams',
+              first_name: 'Emma',
+              last_name: 'Williams',
               email: 'emma@email.com',
               phone: '+1-555-0004',
               role: 'member',
@@ -99,8 +94,8 @@ const Users: React.FC = () => {
             },
             {
               _id: '5',
-              firstName: 'James',
-              lastName: 'Brown',
+              first_name: 'James',
+              last_name: 'Brown',
               email: 'james@email.com',
               phone: '+1-555-0005',
               role: 'member',
@@ -118,8 +113,6 @@ const Users: React.FC = () => {
     }
     fetchUsers()
     }, [])
-  
-  console.log('Users 3:', users)
 
   // Разрешить доступ только администраторам и тренерам
   if (!currentUser || !['admin', 'trainer'].includes(currentUser.role)) {
@@ -137,12 +130,10 @@ const Users: React.FC = () => {
   const handleAddSuccess = () => {
     // Refresh the users list
     const fetchUsers = () => {
-      console.log('Fetching users...')
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
           if (response.success) {
             setUsers(response.data)
-            console.log('Users:', response.data)
           }
         })
         .catch(error => {
@@ -190,7 +181,7 @@ const Users: React.FC = () => {
   }
 
   const handleDeleteUser = async (user: User) => {
-    if (window.confirm(`Вы уверены, что хотите удалить пользователя "${user.firstName} ${user.lastName}"? Это действие нельзя отменить.`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить пользователя "${user.first_name} ${user.last_name}"? Это действие нельзя отменить.`)) {
       try {
         await apiClient.delete('users', user._id)
         // Refresh the users list
@@ -206,7 +197,7 @@ const Users: React.FC = () => {
   }
 
   const handleArchiveUser = async (user: User) => {
-    if (window.confirm(`Вы уверены, что хотите ${user.isActive ? 'архивировать' : 'восстановить'} пользователя "${user.firstName} ${user.lastName}"?`)) {
+    if (window.confirm(`Вы уверены, что хотите ${user.isActive ? 'архивировать' : 'восстановить'} пользователя "${user.first_name} ${user.last_name}"?`)) {
       try {
         await apiClient.update('users', user._id, { isActive: !user.isActive })
         handleAddSuccess() // Refresh the list
@@ -218,13 +209,12 @@ const Users: React.FC = () => {
   }
 
   const filteredUsers = users.filter(user =>
-    user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
-//     .filter(user => showArchived ? true : user.isActive !== false
-// //console.log('Users 4(showing filtered users):', user)
-//   )
+    .filter(user => showArchived ? true : user.isActive !== false
+  )
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -338,12 +328,12 @@ const Users: React.FC = () => {
                     <div className="flex items-center">
                       <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-sm font-medium">
-                          {user.firstName[0]}{user.lastName[0]}
+                          {user.first_name[0]}{user.last_name[0]}
                         </span>
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {user.firstName} {user.lastName}
+                          {user.first_name} {user.last_name}
                           {user.isActive === false && (
                             <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                               Архивирован

@@ -6,8 +6,8 @@ interface Lesson {
   title: string
   description?: string
   instructor: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
     email?: string
     phone?: string
   }
@@ -17,8 +17,8 @@ interface Lesson {
     age?: number
   }
   member: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
     email?: string
     phone?: string
   }
@@ -187,7 +187,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                       Инструктор
                     </h4>
                     <div className="space-y-1">
-                      <p className="text-gray-700">{lesson.instructor.firstName} {lesson.instructor.lastName}</p>
+                      <p className="text-gray-700">{lesson.instructor.first_name} {lesson.instructor.last_name}</p>
                       {lesson.instructor.email && (
                         <p className="text-sm text-gray-600">{lesson.instructor.email}</p>
                       )}
@@ -203,7 +203,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                       Участник
                     </h4>
                     <div className="space-y-1">
-                      <p className="text-gray-700">{lesson.member.firstName} {lesson.member.lastName}</p>
+                      <p className="text-gray-700">{lesson.member.first_name} {lesson.member.last_name}</p>
                       {lesson.member.email && (
                         <p className="text-sm text-gray-600">{lesson.member.email}</p>
                       )}

@@ -25,9 +25,9 @@ router.get('/', auth, async (req, res) => {
     }
 
     const lessons = await Lesson.find(query)
-      .populate('instructor', 'firstName lastName email')
+      .populate('instructor', 'first_name last_name email')
       .populate('horse', 'name breed')
-      .populate('member', 'firstName lastName email')
+      .populate('member', 'first_name last_name email')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ scheduledDate: -1 });
@@ -54,9 +54,9 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const lesson = await Lesson.findById(req.params.id)
-      .populate('instructor', 'firstName lastName email phone')
+      .populate('instructor', 'first_name last_name email phone')
       .populate('horse', 'name breed age')
-      .populate('member', 'firstName lastName email phone');
+      .populate('member', 'first_name last_name email phone');
 
     if (!lesson) {
       return res.status(404).json({ message: 'Занятие не найдено' });
@@ -84,9 +84,9 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
     await lesson.save();
 
     await lesson.populate([
-      { path: 'instructor', select: 'firstName lastName email' },
+      { path: 'instructor', select: 'first_name last_name email' },
       { path: 'horse', select: 'name breed' },
-      { path: 'member', select: 'firstName lastName email' }
+      { path: 'member', select: 'first_name last_name email' }
     ]);
 
     logger.info(`Создано новое занятие: ${lesson.title}`);
@@ -116,9 +116,9 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
 
     await lesson.save();
     await lesson.populate([
-      { path: 'instructor', select: 'firstName lastName email' },
+      { path: 'instructor', select: 'first_name last_name email' },
       { path: 'horse', select: 'name breed' },
-      { path: 'member', select: 'firstName lastName email' }
+      { path: 'member', select: 'first_name last_name email' }
     ]);
 
     logger.info(`Обновлено занятие: ${lesson.title}`);

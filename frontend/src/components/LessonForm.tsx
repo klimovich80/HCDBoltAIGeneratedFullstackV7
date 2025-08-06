@@ -31,8 +31,8 @@ interface Lesson {
   description?: string
   instructor: {
     _id: string
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   horse?: {
     _id: string
@@ -41,8 +41,8 @@ interface Lesson {
   }
   member: {
     _id: string
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   scheduled_date: string
   duration_minutes: number
@@ -55,8 +55,8 @@ interface Lesson {
 
 interface User {
   _id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   role: string
 }
 
@@ -66,12 +66,12 @@ interface Horse {
   breed: string
 }
 
-const LessonForm: React.FC<LessonFormProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  lesson = null, 
-  mode = 'create' 
+const LessonForm: React.FC<LessonFormProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  lesson = null,
+  mode = 'create'
 }) => {
   const [formData, setFormData] = useState<LessonFormData>({
     title: '',
@@ -99,7 +99,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
     const loadData = async () => {
       try {
         setLoadingData(true)
-        
+
         // Load instructors (trainers and admins)
         const instructorsResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'trainer' })
         if (instructorsResponse.success) {
@@ -121,13 +121,13 @@ const LessonForm: React.FC<LessonFormProps> = ({
         console.error('Failed to load data:', error)
         // Set demo data for development
         setInstructors([
-          { _id: '1', firstName: 'Sarah', lastName: 'Johnson', role: 'trainer' },
-          { _id: '2', firstName: 'Michael', lastName: 'Chen', role: 'trainer' }
+          { _id: '1', first_name: 'Sarah', last_name: 'Johnson', role: 'trainer' },
+          { _id: '2', first_name: 'Michael', last_name: 'Chen', role: 'trainer' }
         ])
         setMembers([
-          { _id: '3', firstName: 'Emma', lastName: 'Williams', role: 'member' },
-          { _id: '4', firstName: 'James', lastName: 'Brown', role: 'member' },
-          { _id: '5', firstName: 'Sophie', lastName: 'Davis', role: 'member' }
+          { _id: '3', first_name: 'Emma', last_name: 'Williams', role: 'member' },
+          { _id: '4', first_name: 'James', last_name: 'Brown', role: 'member' },
+          { _id: '5', first_name: 'Sophie', last_name: 'Davis', role: 'member' }
         ])
         setHorses([
           { _id: '1', name: 'Thunder', breed: 'Thoroughbred' },
@@ -149,7 +149,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
     if (lesson && mode === 'edit') {
       const scheduledDate = new Date(lesson.scheduled_date)
       const formattedDate = scheduledDate.toISOString().slice(0, 16) // Format for datetime-local input
-      
+
       setFormData({
         title: lesson.title,
         description: lesson.description || '',
@@ -168,7 +168,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
       // Reset form for create mode
       const now = new Date()
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset()) // Adjust for timezone
-      
+
       setFormData({
         title: '',
         description: '',
@@ -194,7 +194,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
     try {
       // Convert datetime-local to ISO string
       const scheduledDate = new Date(formData.scheduled_date).toISOString()
-      
+
       // Clean data for API
       const cleanedData = {
         ...formData,
@@ -224,8 +224,8 @@ const LessonForm: React.FC<LessonFormProps> = ({
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'duration_minutes' || name === 'cost' 
-        ? parseFloat(value) || 0 
+      [name]: name === 'duration_minutes' || name === 'cost'
+        ? parseFloat(value) || 0
         : value
     }))
   }
@@ -292,7 +292,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                   <option value="">Выберите инструктора</option>
                   {instructors.map((instructor) => (
                     <option key={instructor._id} value={instructor._id}>
-                      {instructor.firstName} {instructor.lastName}
+                      {instructor.first_name} {instructor.last_name}
                     </option>
                   ))}
                 </select>
@@ -313,7 +313,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                   <option value="">Выберите участника</option>
                   {members.map((member) => (
                     <option key={member._id} value={member._id}>
-                      {member.firstName} {member.lastName}
+                      {member.first_name} {member.last_name}
                     </option>
                   ))}
                 </select>
@@ -485,8 +485,8 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 disabled={loading}
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading 
-                  ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
+                {loading
+                  ? (mode === 'edit' ? 'Сохранение...' : 'Создание...')
                   : (mode === 'edit' ? 'Сохранить изменения' : 'Создать занятие')
                 }
               </button>

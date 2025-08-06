@@ -13,8 +13,8 @@ const Sidebar: React.FC = () => {
     { name: 'Мероприятия', href: '/events', icon: Trophy },
     { name: 'Снаряжение', href: '/equipment', icon: Package },
     { name: 'Платежи', href: '/payments', icon: CreditCard },
-    ...(user?.role === 'admin' || user?.role === 'trainer' 
-      ? [{ name: 'Пользователи', href: '/users', icon: Users }] 
+    ...(user?.role === 'admin' || user?.role === 'trainer'
+      ? [{ name: 'Пользователи', href: '/users', icon: Users }]
       : [])
   ]
 
@@ -34,10 +34,9 @@ const Sidebar: React.FC = () => {
               key={item.name}
               to={item.href}
               className={({ isActive }) =>
-                `group flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1 transition-colors ${
-                  isActive
-                    ? 'bg-indigo-100 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                `group flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1 transition-colors ${isActive
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`
               }
             >
@@ -52,12 +51,12 @@ const Sidebar: React.FC = () => {
         <div className="flex items-center space-x-3 mb-4">
           <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
             <span className="text-white text-sm font-medium">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
+              {user?.first_name?.[0]}{user?.last_name?.[0]}
             </span>
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900">
-              {user?.firstName} {user?.lastName}
+              {user?.first_name} {user?.last_name}
             </p>
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>

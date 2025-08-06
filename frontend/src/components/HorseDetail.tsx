@@ -20,8 +20,8 @@ interface Horse {
   lastVetVisit?: string
   nextVetVisit?: string
   owner?: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
     email?: string
     phone?: string
   }
@@ -175,7 +175,7 @@ const HorseDetail: React.FC<HorseDetailProps> = ({ isOpen, onClose, horse }) => 
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Имя:</span>
-                      <span className="font-medium">{horse.owner.firstName} {horse.owner.lastName}</span>
+                      <span className="font-medium">{horse.owner.first_name} {horse.owner.last_name}</span>
                     </div>
                     {horse.owner.email && (
                       <div className="flex justify-between">
@@ -202,8 +202,8 @@ const HorseDetail: React.FC<HorseDetailProps> = ({ isOpen, onClose, horse }) => 
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Статус вакцинации:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getVaccinationStatusColor(horse.vaccinationStatus)}`}>
-                      {horse.vaccinationStatus === 'current' ? 'Актуальна' : 
-                       horse.vaccinationStatus === 'due' ? 'Требуется' : 'Просрочена'}
+                      {horse.vaccinationStatus === 'current' ? 'Актуальна' :
+                        horse.vaccinationStatus === 'due' ? 'Требуется' : 'Просрочена'}
                     </span>
                   </div>
                   <div className="flex justify-between">

@@ -3,8 +3,8 @@ import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 
 interface UserFormData {
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   password?: string
   phone?: string
@@ -26,8 +26,8 @@ interface UserFormProps {
 
 interface User {
   _id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   phone?: string
   role: 'admin' | 'trainer' | 'member' | 'guest'
@@ -38,16 +38,16 @@ interface User {
   notes?: string
 }
 
-const UserForm: React.FC<UserFormProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  user = null, 
-  mode = 'create' 
+const UserForm: React.FC<UserFormProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  user = null,
+  mode = 'create'
 }) => {
   const [formData, setFormData] = useState<UserFormData>({
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     email: '',
     password: '',
     phone: '',
@@ -65,8 +65,8 @@ const UserForm: React.FC<UserFormProps> = ({
   useEffect(() => {
     if (user && mode === 'edit') {
       setFormData({
-        firstName: user.firstName,
-        lastName: user.lastName,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         password: '', // Don't pre-fill password for security
         phone: user.phone || '',
@@ -80,8 +80,8 @@ const UserForm: React.FC<UserFormProps> = ({
     } else if (mode === 'create') {
       // Reset form for create mode
       setFormData({
-        firstName: '',
-        lastName: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         phone: '',
@@ -96,6 +96,7 @@ const UserForm: React.FC<UserFormProps> = ({
   }, [user, mode])
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('handling submit: ', formData)
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -167,30 +168,30 @@ const UserForm: React.FC<UserFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-2">
                 Имя *
               </label>
               <input
                 type="text"
-                id="firstName"
-                name="firstName"
+                id="first_name"
+                name="first_name"
                 required
-                value={formData.firstName}
+                value={formData.first_name}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-2">
                 Фамилия *
               </label>
               <input
                 type="text"
-                id="lastName"
-                name="lastName"
+                id="last_name"
+                name="last_name"
                 required
-                value={formData.lastName}
+                value={formData.last_name}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
@@ -376,8 +377,8 @@ const UserForm: React.FC<UserFormProps> = ({
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading 
-                ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
+              {loading
+                ? (mode === 'edit' ? 'Сохранение...' : 'Создание...')
                 : (mode === 'edit' ? 'Сохранить изменения' : 'Создать пользователя')
               }
             </button>

@@ -17,8 +17,8 @@ interface Horse {
   vaccinationStatus: 'current' | 'due' | 'overdue'
   isActive?: boolean
   owner?: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
 }
 
@@ -57,7 +57,7 @@ const Horses: React.FC = () => {
               stallNumber: 'S01',
               vaccinationStatus: 'current',
               isActive: true,
-              owner: { firstName: 'Emma', lastName: 'Williams' }
+              owner: { first_name: 'Emma', last_name: 'Williams' }
             },
             {
               _id: '2',
@@ -71,7 +71,7 @@ const Horses: React.FC = () => {
               stallNumber: 'S02',
               vaccinationStatus: 'current',
               isActive: true,
-              owner: { firstName: 'James', lastName: 'Brown' }
+              owner: { first_name: 'James', last_name: 'Brown' }
             },
             {
               _id: '3',
@@ -84,7 +84,7 @@ const Horses: React.FC = () => {
               stallNumber: 'S03',
               vaccinationStatus: 'due',
               isActive: true,
-              owner: { firstName: 'Sophie', lastName: 'Davis' }
+              owner: { first_name: 'Sophie', last_name: 'Davis' }
             },
             {
               _id: '4',
@@ -97,7 +97,7 @@ const Horses: React.FC = () => {
               stallNumber: '',
               vaccinationStatus: 'current',
               isActive: false,
-              owner: { firstName: 'Former', lastName: 'Owner' }
+              owner: { first_name: 'Former', last_name: 'Owner' }
             }
           ])
         })
@@ -233,7 +233,7 @@ const Horses: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Лошади</h1>
           <p className="text-gray-600">Управляйте лошадьми и их информацией</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddForm(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
         >
@@ -337,7 +337,7 @@ const Horses: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {horse.owner ? `${horse.owner.firstName} ${horse.owner.lastName}` : 'Школьная лошадь'}
+                      {horse.owner ? `${horse.owner.first_name} ${horse.owner.last_name}` : 'Школьная лошадь'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -347,28 +347,28 @@ const Horses: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleViewHorse(horse)}
                         className="text-indigo-600 hover:text-indigo-900"
                         title="Просмотр информации о лошади"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEditHorse(horse)}
                         className="text-gray-600 hover:text-gray-900"
                         title="Редактировать лошадь"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleArchiveHorse(horse)}
                         className={`${horse.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
                         title={horse.isActive === false ? 'Восстановить лошадь' : 'Архивировать лошадь'}
                       >
                         {horse.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteHorse(horse)}
                         className="text-red-600 hover:text-red-900"
                         title="Удалить лошадь"

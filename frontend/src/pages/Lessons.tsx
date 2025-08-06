@@ -8,16 +8,16 @@ interface Lesson {
   _id: string
   title: string
   instructor: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   horse?: {
     name: string
     breed: string
   }
   member: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   scheduledDate: string
   durationMinutes: number
@@ -56,9 +56,9 @@ const Lessons: React.FC = () => {
             {
               _id: '1',
               title: 'Beginner Riding Lesson',
-              instructor: { firstName: 'Sarah', lastName: 'Johnson' },
+              instructor: { first_name: 'Sarah', last_name: 'Johnson' },
               horse: { name: 'Spirit', breed: 'Mustang' },
-              member: { firstName: 'Emma', lastName: 'Williams' },
+              member: { first_name: 'Emma', last_name: 'Williams' },
               scheduledDate: '2024-12-20T10:00:00Z',
               durationMinutes: 60,
               lessonType: 'private',
@@ -69,9 +69,9 @@ const Lessons: React.FC = () => {
             {
               _id: '2',
               title: 'Advanced Dressage',
-              instructor: { firstName: 'Michael', lastName: 'Chen' },
+              instructor: { first_name: 'Michael', last_name: 'Chen' },
               horse: { name: 'Thunder', breed: 'Thoroughbred' },
-              member: { firstName: 'Sophie', lastName: 'Davis' },
+              member: { first_name: 'Sophie', last_name: 'Davis' },
               scheduledDate: '2024-12-20T14:00:00Z',
               durationMinutes: 90,
               lessonType: 'private',
@@ -82,9 +82,9 @@ const Lessons: React.FC = () => {
             {
               _id: '3',
               title: 'Group Trail Ride',
-              instructor: { firstName: 'Sarah', lastName: 'Johnson' },
+              instructor: { first_name: 'Sarah', last_name: 'Johnson' },
               horse: { name: 'Star', breed: 'Quarter Horse' },
-              member: { firstName: 'James', lastName: 'Brown' },
+              member: { first_name: 'James', last_name: 'Brown' },
               scheduledDate: '2024-12-21T09:00:00Z',
               durationMinutes: 120,
               lessonType: 'group',
@@ -190,10 +190,10 @@ const Lessons: React.FC = () => {
 
   const filteredLessons = lessons.filter(lesson =>
     lesson.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lesson.member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    lesson.member.lastName.toLowerCase().includes(searchTerm.toLowerCase())
+    lesson.member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lesson.member.last_name.toLowerCase().includes(searchTerm.toLowerCase())
   )
-  .filter(lesson => showArchived ? true : lesson.isActive !== false)
+    .filter(lesson => showArchived ? true : lesson.isActive !== false)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -247,7 +247,7 @@ const Lessons: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Занятия</h1>
           <p className="text-gray-600">Управляйте расписанием занятий и бронированием</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddForm(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
         >
@@ -344,10 +344,10 @@ const Lessons: React.FC = () => {
                     <div>
                       <div className="text-sm text-gray-900 flex items-center">
                         <User className="h-4 w-4 mr-1 text-gray-400" />
-                        {lesson.member.firstName} {lesson.member.lastName}
+                        {lesson.member.first_name} {lesson.member.last_name}
                       </div>
                       <div className="text-sm text-gray-500">
-                        Инструктор: {lesson.instructor.firstName} {lesson.instructor.lastName}
+                        Инструктор: {lesson.instructor.first_name} {lesson.instructor.last_name}
                       </div>
                     </div>
                   </td>
@@ -376,28 +376,28 @@ const Lessons: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleViewLesson(lesson)}
                         className="text-indigo-600 hover:text-indigo-900"
                         title="Просмотр информации о занятии"
                       >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleEditLesson(lesson)}
                         className="text-gray-600 hover:text-gray-900"
                         title="Редактировать занятие"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleArchiveLesson(lesson)}
                         className={`${lesson.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
                         title={lesson.isActive === false ? 'Восстановить занятие' : 'Архивировать занятие'}
                       >
                         {lesson.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteLesson(lesson)}
                         className="text-red-600 hover:text-red-900"
                         title="Удалить занятие"

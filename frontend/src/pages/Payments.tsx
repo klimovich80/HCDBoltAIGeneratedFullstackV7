@@ -5,8 +5,8 @@ import { apiClient } from '../lib/api'
 interface Payment {
   _id: string
   member: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   amount: number
   paymentType: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
@@ -37,7 +37,7 @@ const Payments: React.FC = () => {
           setPayments([
             {
               _id: '1',
-              member: { firstName: 'Emma', lastName: 'Williams' },
+              member: { first_name: 'Emma', last_name: 'Williams' },
               amount: 340,
               paymentType: 'boarding',
               paymentMethod: 'card',
@@ -49,7 +49,7 @@ const Payments: React.FC = () => {
             },
             {
               _id: '2',
-              member: { firstName: 'James', lastName: 'Brown' },
+              member: { first_name: 'James', last_name: 'Brown' },
               amount: 85,
               paymentType: 'lesson',
               paymentMethod: 'cash',
@@ -61,7 +61,7 @@ const Payments: React.FC = () => {
             },
             {
               _id: '3',
-              member: { firstName: 'Sophie', lastName: 'Davis' },
+              member: { first_name: 'Sophie', last_name: 'Davis' },
               amount: 420,
               paymentType: 'boarding',
               paymentMethod: 'transfer',
@@ -72,7 +72,7 @@ const Payments: React.FC = () => {
             },
             {
               _id: '4',
-              member: { firstName: 'Robert', lastName: 'Wilson' },
+              member: { first_name: 'Robert', last_name: 'Wilson' },
               amount: 45,
               paymentType: 'event',
               paymentMethod: 'card',
@@ -84,7 +84,7 @@ const Payments: React.FC = () => {
             },
             {
               _id: '5',
-              member: { firstName: 'Emma', lastName: 'Williams' },
+              member: { first_name: 'Emma', last_name: 'Williams' },
               amount: 120,
               paymentType: 'lesson',
               paymentMethod: 'card',
@@ -104,8 +104,8 @@ const Payments: React.FC = () => {
   }, [])
 
   const filteredPayments = payments.filter(payment =>
-    payment.member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payment.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payment.description?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -256,24 +256,24 @@ const Payments: React.FC = () => {
                         {payment.invoiceNumber || 'Не указан'}
                       </div>
                       <div className="text-sm text-gray-500 capitalize">
-                        {payment.paymentMethod === 'cash' ? 'наличные' : 
-                         payment.paymentMethod === 'card' ? 'карта' : 
-                         payment.paymentMethod === 'transfer' ? 'перевод' : 'чек'}
+                        {payment.paymentMethod === 'cash' ? 'наличные' :
+                          payment.paymentMethod === 'card' ? 'карта' :
+                            payment.paymentMethod === 'transfer' ? 'перевод' : 'чек'}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {payment.member.firstName} {payment.member.lastName}
+                      {payment.member.first_name} {payment.member.last_name}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentTypeColor(payment.paymentType)}`}>
-                      {payment.paymentType === 'lesson' ? 'занятие' : 
-                       payment.paymentType === 'boarding' ? 'содержание' : 
-                       payment.paymentType === 'event' ? 'мероприятие' : 
-                       payment.paymentType === 'membership' ? 'членство' : 
-                       payment.paymentType === 'equipment' ? 'снаряжение' : 'прочее'}
+                      {payment.paymentType === 'lesson' ? 'занятие' :
+                        payment.paymentType === 'boarding' ? 'содержание' :
+                          payment.paymentType === 'event' ? 'мероприятие' :
+                            payment.paymentType === 'membership' ? 'членство' :
+                              payment.paymentType === 'equipment' ? 'снаряжение' : 'прочее'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -294,9 +294,9 @@ const Payments: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(payment.status)}`}>
-                      {payment.status === 'paid' ? 'оплачено' : 
-                       payment.status === 'pending' ? 'ожидает' : 
-                       payment.status === 'overdue' ? 'просрочено' : 'отменено'}
+                      {payment.status === 'paid' ? 'оплачено' :
+                        payment.status === 'pending' ? 'ожидает' :
+                          payment.status === 'overdue' ? 'просрочено' : 'отменено'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

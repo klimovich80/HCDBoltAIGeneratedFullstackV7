@@ -9,7 +9,7 @@ const router = express.Router();
 // Регистрация нового пользователя
 router.post('/register', (req, res) => {
   const handleRegister = () => {
-    const { firstName, lastName, email, password, role = 'member' } = req.body;
+    const { first_name, last_name, email, password, role = 'member' } = req.body;
 
     // Проверяем, существует ли пользователь
     User.findOne({ email })
@@ -22,7 +22,7 @@ router.post('/register', (req, res) => {
         // Создаем пользователя
         const userData = {
           firsName,
-          lastName,
+          last_name,
           email,
           password,
           role
@@ -47,8 +47,8 @@ router.post('/register', (req, res) => {
           token,
           user: {
             id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            first_name: user.first_name,
+            last_name: user.last_name,
             email: user.email,
             role: user.role
           }
@@ -98,8 +98,8 @@ router.post('/login', (req, res) => {
               token,
               user: {
                 id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
+                first_name: user.first_name,
+                last_name: user.last_name,
                 email: user.email,
                 role: user.role
               }

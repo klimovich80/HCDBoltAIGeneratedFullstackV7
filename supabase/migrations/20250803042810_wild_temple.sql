@@ -27,8 +27,8 @@
 CREATE TABLE IF NOT EXISTS users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   auth_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  firstName text NOT NULL,
-  lastName text NOT NULL,
+  first_name text NOT NULL,
+  last_name text NOT NULL,
   email text UNIQUE NOT NULL,
   phone text,
   role text NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'trainer', 'member', 'guest')),

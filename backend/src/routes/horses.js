@@ -18,7 +18,7 @@ router.get('/', auth, (req, res) => {
 
     Promise.all([
       Horse.find(query)
-        .populate('owner', 'firstName lastName email')
+        .populate('owner', 'first_name last_name email')
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ name: 1 }),
@@ -49,7 +49,7 @@ router.get('/', auth, (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const horse = await Horse.findById(req.params.id)
-      .populate('owner', 'firstName lastName email phone');
+      .populate('owner', 'first_name last_name email phone');
 
     if (!horse) {
       return res.status(404).json({ message: 'Лошадь не найдена' });
@@ -71,7 +71,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
     const horse = new Horse(req.body);
     await horse.save();
 
-    await horse.populate('owner', 'firstName lastName email');
+    await horse.populate('owner', 'first_name last_name email');
 
     logger.info(`Создана новая лошадь: ${horse.name}`);
 
@@ -99,7 +99,7 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
     });
 
     await horse.save();
-    await horse.populate('owner', 'firstName lastName email');
+    await horse.populate('owner', 'first_name last_name email');
 
     const action = req.body.isActive === false ? 'архивирована' : req.body.isActive === true ? 'восстановлена' : 'обновлена';
     logger.info(`Лошадь ${action}: ${horse.name}`);

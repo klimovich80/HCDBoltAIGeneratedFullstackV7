@@ -3,8 +3,8 @@ import { X, Calendar, Mail, Phone, Shield, User, AlertTriangle, FileText } from 
 
 interface User {
   _id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   phone?: string
   role: 'admin' | 'trainer' | 'member' | 'guest'
@@ -87,7 +87,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ isOpen, onClose, user }) => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
-                {user.firstName} {user.lastName}
+                {user.first_name} {user.last_name}
                 {user.isActive === false && (
                   <span className="ml-3 inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-800">
                     Архивирован
@@ -196,9 +196,8 @@ const UserDetail: React.FC<UserDetailProps> = ({ isOpen, onClose, user }) => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Статус:</span>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
                       {user.isActive !== false ? 'Активен' : 'Архивирован'}
                     </span>
                   </div>

@@ -9,15 +9,15 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, eventType, status } = req.query;
-    
+
     let query = {};
-    
+
     if (eventType) query.eventType = eventType;
     if (status) query.status = status;
 
     const events = await Event.find(query)
-      .populate('organizer', 'firstName lastName email')
-      .populate('participants.user', 'firstName lastName email')
+      .populate('organizer', 'first_name last_name email')
+      .populate('participants.user', 'first_name last_name email')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ startDate: 1 });
@@ -44,10 +44,10 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('organizer', 'firstName lastName email phone')
-      .populate('participants.user', 'firstName lastName email phone')
-      .populate('waitlist.user', 'firstName lastName email phone');
-    
+      .populate('organizer', 'first_name last_name email phone')
+      .populate('participants.user', 'first_name last_name email phone')
+      .populate('waitlist.user', 'first_name last_name email phone');
+
     if (!event) {
       return res.status(404).json({ message: 'Мероприятие не найдено' });
     }
@@ -69,9 +69,9 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
       ...req.body,
       organizer: req.user._id
     });
-    
+
     await event.save();
-    await event.populate('organizer', 'firstName lastName email');
+    await event.populate('organizer', 'first_name last_name email');
 
     logger.info(`Создано новое мероприятие: ${event.title}`);
 
@@ -89,7 +89,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.post('/:id/register', auth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    
+
     if (!event) {
       return res.status(404).json({ message: 'Мероприятие не найдено' });
     }
@@ -108,7 +108,7 @@ router.post('/:id/register', auth, async (req, res) => {
       // Добавить в лист ожидания
       event.waitlist.push({ user: req.user._id });
       await event.save();
-      
+
       return res.json({
         success: true,
         message: 'Добавлен в лист ожидания',

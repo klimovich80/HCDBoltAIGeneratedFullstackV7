@@ -13,8 +13,8 @@ interface Event {
   maxParticipants?: number
   registrationFee: number
   organizer: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
   participants: any[]
@@ -47,7 +47,7 @@ const Events: React.FC = () => {
               location: 'Main Arena',
               maxParticipants: 50,
               registrationFee: 45,
-              organizer: { firstName: 'Sarah', lastName: 'Johnson' },
+              organizer: { first_name: 'Sarah', last_name: 'Johnson' },
               status: 'upcoming',
               participants: new Array(32).fill(null)
             },
@@ -61,7 +61,7 @@ const Events: React.FC = () => {
               location: 'Outdoor Arena',
               maxParticipants: 20,
               registrationFee: 180,
-              organizer: { firstName: 'Michael', lastName: 'Chen' },
+              organizer: { first_name: 'Michael', last_name: 'Chen' },
               status: 'upcoming',
               participants: new Array(15).fill(null)
             },
@@ -75,7 +75,7 @@ const Events: React.FC = () => {
               location: 'Trail System',
               maxParticipants: 30,
               registrationFee: 25,
-              organizer: { firstName: 'Sarah', lastName: 'Johnson' },
+              organizer: { first_name: 'Sarah', last_name: 'Johnson' },
               status: 'upcoming',
               participants: new Array(22).fill(null)
             }
@@ -127,11 +127,11 @@ const Events: React.FC = () => {
   const formatDateRange = (startDate: string, endDate: string) => {
     const start = new Date(startDate)
     const end = new Date(endDate)
-    
+
     if (start.toDateString() === end.toDateString()) {
       return formatDate(startDate)
     }
-    
+
     return `${formatDate(startDate)} - ${formatDate(endDate)}`
   }
 
@@ -178,15 +178,15 @@ const Events: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{event.title}</h3>
                   <div className="flex space-x-2 mb-3">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getEventTypeColor(event.eventType)}`}>
-                      {event.eventType === 'competition' ? 'соревнование' : 
-                       event.eventType === 'clinic' ? 'клиника' : 
-                       event.eventType === 'social' ? 'социальное' : 
-                       event.eventType === 'maintenance' ? 'обслуживание' : 'шоу'}
+                      {event.eventType === 'competition' ? 'соревнование' :
+                        event.eventType === 'clinic' ? 'клиника' :
+                          event.eventType === 'social' ? 'социальное' :
+                            event.eventType === 'maintenance' ? 'обслуживание' : 'шоу'}
                     </span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(event.status)}`}>
-                      {event.status === 'upcoming' ? 'предстоящее' : 
-                       event.status === 'ongoing' ? 'идет' : 
-                       event.status === 'completed' ? 'завершено' : 'отменено'}
+                      {event.status === 'upcoming' ? 'предстоящее' :
+                        event.status === 'ongoing' ? 'идет' :
+                          event.status === 'completed' ? 'завершено' : 'отменено'}
                     </span>
                   </div>
                 </div>
@@ -220,7 +220,7 @@ const Events: React.FC = () => {
                   <span className="text-sm text-gray-500 ml-1">регистрация</span>
                 </div>
                 <div className="text-sm text-gray-500">
-                  от {event.organizer.firstName} {event.organizer.lastName}
+                  от {event.organizer.first_name} {event.organizer.last_name}
                 </div>
               </div>
 
