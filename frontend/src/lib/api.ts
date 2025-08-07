@@ -104,6 +104,7 @@ class ApiClient {
   }
 
   update<T>(resource: string, id: string, data: any): Promise<T> {
+    console.log('api.ts posting updated: ', data ," to ", resource);
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

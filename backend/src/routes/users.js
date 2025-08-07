@@ -2,12 +2,13 @@ const express = require('express');
 const User = require('../models/User');
 const { auth, authorize } = require('../middleware/auth');
 const logger = require('../config/logger');
+const bcrypt = require('bcryptjs');
 
 const router = express.Router();
 
 // Create new user (admin only)
 router.post('/', auth, authorize('admin'), (req, res) => {
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     const {
       first_name,
       last_name,
@@ -72,90 +73,92 @@ router.post('/', auth, authorize('admin'), (req, res) => {
       }
     }
 
-    // Check if user already exists
-    User.findOne({ email })
-      .then(existingUser => {
-        if (existingUser) {
-          res.status(400).json({
-            success: false,
-            message: 'Пользователь с таким email уже существует'
-          });
-          return;
-        }
-
-        // Prepare user data
-        const userData = {
-          first_name: first_name,
-          last_name: last_name,
-          email,
-          password,
-          role,
-          phone: phone || undefined,
-          membership_tier: role === 'member' ? membershipTier : undefined,
-          emergency_contact: {
-            name: emergencyContactName || undefined,
-            phone: emergencyContactPhone || undefined,
-            relationship: emergencyContactRelationship || undefined
-          },
-          notes: notes || undefined
-        };
-
-        // Remove undefined emergency contact if all fields are empty
-        if (!emergencyContactName && !emergencyContactPhone && !emergencyContactRelationship) {
-          delete userData.emergency_contact;
-        }
-
-        // Create user
-        return User.create(userData);
-      })
-      .then(user => {
-        if (!user) return;
-
-        logger.info(`Новый пользователь создан администратором: ${email} (создал: ${req.user.userId})`);
-
-        res.status(201).json({
-          success: true,
-          message: 'Пользователь успешно создан',
-          data: {
-            id: user._id,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            email: user.email,
-            role: user.role,
-            phone: user.phone,
-            membershipTier: user.membership_tier,
-            emergencyContactName: user.emergency_contact?.name,
-            emergencyContactPhone: user.emergency_contact?.phone,
-            emergencyContactRelationship: user.emergency_contact?.relationship,
-            notes: user.notes,
-            isActive: user.isActive,
-            createdAt: user.createdAt
-          }
+    try {
+      // Check if user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Пользователь с таким email уже существует'
         });
-      })
-      .catch(error => {
-        logger.error('Ошибка создания пользователя:', error);
+      }
 
-        // Handle specific MongoDB errors
-        if (error.code === 11000) {
-          res.status(400).json({
-            success: false,
-            message: 'Пользователь с таким email уже существует'
-          });
-        } else if (error.name === 'ValidationError') {
-          const validationErrors = Object.values(error.errors).map(err => err.message);
-          res.status(400).json({
-            success: false,
-            message: 'Ошибка валидации данных',
-            errors: validationErrors
-          });
-        } else {
-          res.status(500).json({
-            success: false,
-            message: 'Ошибка сервера при создании пользователя'
-          });
+      // Hash password with bcrypt
+      logger.info(`Hashing password for new user: ${email}`);
+      const saltRounds = 12;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      logger.info(`Password hashed successfully for user: ${email}`);
+      // Prepare user data with hashed password
+      const userData = {
+        first_name: first_name,
+        last_name: last_name,
+        email,
+        password: hashedPassword, // Use the hashed password
+        role,
+        phone: phone || undefined,
+        membership_tier: role === 'member' ? membershipTier : undefined,
+        emergency_contact: {
+          name: emergencyContactName || undefined,
+          phone: emergencyContactPhone || undefined,
+          relationship: emergencyContactRelationship || undefined
+        },
+        notes: notes || undefined
+      };
+
+      // Remove undefined emergency contact if all fields are empty
+      if (!emergencyContactName && !emergencyContactPhone && !emergencyContactRelationship) {
+        delete userData.emergency_contact;
+      }
+
+      logger.info(`Creating new user: ${email} (created by admin: ${req.user.userId})`);
+
+      // Create user
+      const user = await User.create(userData);
+
+      logger.info(`New user created successfully: ${email}`);
+
+      res.status(201).json({
+        success: true,
+        message: 'Пользователь успешно создан',
+        data: {
+          id: user._id,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+          membershipTier: user.membership_tier,
+          emergencyContactName: user.emergency_contact?.name,
+          emergencyContactPhone: user.emergency_contact?.phone,
+          emergencyContactRelationship: user.emergency_contact?.relationship,
+          notes: user.notes,
+          isActive: user.isActive,
+          createdAt: user.createdAt
         }
       });
+    } catch (error) {
+      logger.error('Ошибка создания пользователя:', error);
+
+      // Handle specific MongoDB errors
+      if (error.code === 11000) {
+        res.status(400).json({
+          success: false,
+          message: 'Пользователь с таким email уже существует'
+        });
+      } else if (error.name === 'ValidationError') {
+        const validationErrors = Object.values(error.errors).map(err => err.message);
+        res.status(400).json({
+          success: false,
+          message: 'Ошибка валидации данных',
+          errors: validationErrors
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Ошибка сервера при создании пользователя'
+        });
+      }
+    }
   };
 
   handleCreateUser();
@@ -229,9 +232,11 @@ router.get('/:id', auth, (req, res) => {
   handleGetUser();
 });
 
-// Обновить пользователя
+// Update user (with password hashing support)
 router.put('/:id', auth, (req, res) => {
   const handleUpdateUser = () => {
+    const { password, ...otherFields } = req.body;
+
     User.findById(req.params.id)
       .then(user => {
         if (!user) {
@@ -246,22 +251,37 @@ router.put('/:id', auth, (req, res) => {
         }
 
         // Только администратор может изменять роли
-        if (req.body.role && req.user.role !== 'admin') {
-          delete req.body.role;
+        if (otherFields.role && req.user.role !== 'admin') {
+          delete otherFields.role;
         }
 
-        Object.keys(req.body).forEach(key => {
-          if (key !== 'password') { // Не разрешаем обновление пароля через этот маршрут
-            user[key] = req.body[key];
-          }
+        // Update other fields
+        Object.keys(otherFields).forEach(key => {
+          user[key] = otherFields[key];
         });
+
+        // Handle password update if provided
+        if (password) {
+          // Validate password length
+          if (password.length < 6) {
+            res.status(400).json({
+              success: false,
+              message: 'Пароль должен содержать минимум 6 символов'
+            });
+            return;
+          }
+
+          // Set new password - it will be automatically hashed by pre-save hook
+          user.password = password;
+          logger.info(`Password updated for user: ${user.email}`);
+        }
 
         return user.save();
       })
       .then(updatedUser => {
         if (!updatedUser) return;
 
-        logger.info(`Обновлен пользователь: ${updatedUser.email}`);
+        logger.info(`User updated: ${updatedUser.email}`);
 
         res.json({
           success: true,
@@ -270,7 +290,20 @@ router.put('/:id', auth, (req, res) => {
       })
       .catch(error => {
         logger.error('Ошибка обновления пользователя:', error);
-        res.status(500).json({ message: 'Ошибка сервера' });
+
+        if (error.name === 'ValidationError') {
+          const validationErrors = Object.values(error.errors).map(err => err.message);
+          res.status(400).json({
+            success: false,
+            message: 'Ошибка валидации данных',
+            errors: validationErrors
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'Ошибка сервера при обновлении пользователя'
+          });
+        }
       });
   };
 
