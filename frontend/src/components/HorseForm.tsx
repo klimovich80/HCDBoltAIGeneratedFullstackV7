@@ -157,6 +157,7 @@ const HorseForm: React.FC<HorseFormProps> = ({
       }
       reader.readAsDataURL(file)
     } catch (error) {
+      console.log(error)
       setError('Ошибка при загрузке изображения')
       setUploadingImage(false)
     }

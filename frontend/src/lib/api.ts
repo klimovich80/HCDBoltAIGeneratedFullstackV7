@@ -96,6 +96,7 @@ class ApiClient {
   }
 
   create<T>(resource: string, data: any): Promise<T> {
+    console.log('api.ts posting created: ', data ," to ", resource);
     return this.request<T>(`/${resource}`, {
       method: 'POST',
       body: JSON.stringify(data),

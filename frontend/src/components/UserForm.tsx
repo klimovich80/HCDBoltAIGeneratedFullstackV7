@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 
@@ -96,7 +96,6 @@ const UserForm: React.FC<UserFormProps> = ({
   }, [user, mode])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('handling submit: ', formData)
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -121,6 +120,7 @@ const UserForm: React.FC<UserFormProps> = ({
       if (mode === 'edit' && user) {
         await apiClient.update('users', user._id, cleanedData)
       } else {
+        console.log('Creating user:', cleanedData)
         await apiClient.create('users', cleanedData)
       }
 

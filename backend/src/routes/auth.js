@@ -9,25 +9,104 @@ const router = express.Router();
 // Регистрация нового пользователя
 router.post('/register', (req, res) => {
   const handleRegister = () => {
-    const { first_name, last_name, email, password, role = 'member' } = req.body;
+    const {
+      first_name,
+      last_name,
+      email,
+      password,
+      role = 'member',
+      phone,
+      membershipTier,
+      emergencyContactName,
+      emergencyContactPhone,
+      emergencyContactRelationship,
+      notes
+    } = req.body;
+
+    // Validate required fields
+    if (!first_name || !last_name || !email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Имя, фамилия, email и пароль обязательны'
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400).json({
+        success: false,
+        message: 'Неверный формат email'
+      });
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Пароль должен содержать минимум 6 символов'
+      });
+      return;
+    }
+
+    // Validate role
+    const allowedRoles = ['member', 'trainer', 'admin'];
+    if (!allowedRoles.includes(role)) {
+      res.status(400).json({
+        success: false,
+        message: 'Недопустимая роль пользователя'
+      });
+      return;
+    }
+
+    // Validate membership tier for members
+    if (role === 'member' && membershipTier) {
+      const allowedTiers = ['basic', 'premium', 'elite'];
+      if (!allowedTiers.includes(membershipTier)) {
+        res.status(400).json({
+          success: false,
+          message: 'Недопустимый уровень членства'
+        });
+        return;
+      }
+    }
 
     // Проверяем, существует ли пользователь
     User.findOne({ email })
       .then(existingUser => {
         if (existingUser) {
-          res.status(400).json({ message: 'Пользователь с таким email уже существует' });
+          res.status(400).json({
+            success: false,
+            message: 'Пользователь с таким email уже существует'
+          });
           return;
         }
 
-        // Создаем пользователя
+        // Prepare user data
         const userData = {
-          firsName,
-          last_name,
+          first_name: first_name,
+          last_name: last_name,
           email,
           password,
-          role
+          role,
+          phone: phone || undefined,
+          membership_tier: role === 'member' ? membershipTier : undefined,
+          emergency_contact: {
+            name: emergencyContactName || undefined,
+            phone: emergencyContactPhone || undefined,
+            relationship: emergencyContactRelationship || undefined
+          },
+          notes: notes || undefined
         };
 
+        // Remove undefined emergency contact if all fields are empty
+        if (!emergencyContactName && !emergencyContactPhone && !emergencyContactRelationship) {
+          delete userData.emergency_contact;
+        }
+
+        // Create user
         return User.create(userData);
       })
       .then(user => {
@@ -44,19 +123,45 @@ router.post('/register', (req, res) => {
 
         res.status(201).json({
           success: true,
+          message: 'Пользователь успешно создан',
           token,
           user: {
             id: user._id,
             first_name: user.first_name,
             last_name: user.last_name,
             email: user.email,
-            role: user.role
+            role: user.role,
+            phone: user.phone,
+            membershipTier: user.membership_tier,
+            emergencyContactName: user.emergency_contact?.name,
+            emergencyContactPhone: user.emergency_contact?.phone,
+            emergencyContactRelationship: user.emergency_contact?.relationship,
+            notes: user.notes
           }
         });
       })
       .catch(error => {
         logger.error('Ошибка регистрации:', error);
-        res.status(500).json({ message: 'Ошибка сервера' });
+
+        // Handle specific MongoDB errors
+        if (error.code === 11000) {
+          res.status(400).json({
+            success: false,
+            message: 'Пользователь с таким email уже существует'
+          });
+        } else if (error.name === 'ValidationError') {
+          const validationErrors = Object.values(error.errors).map(err => err.message);
+          res.status(400).json({
+            success: false,
+            message: 'Ошибка валидации данных',
+            errors: validationErrors
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'Ошибка сервера при создании пользователя'
+          });
+        }
       });
   };
 
@@ -91,7 +196,7 @@ router.post('/login', (req, res) => {
               { expiresIn: process.env.JWT_EXPIRE || '7d' }
             );
 
-            //logger.info(`Пользователь вошел в систему: ${email}`);
+            logger.info(`Пользователь вошел в систему: ${email}`);
 
             res.json({
               success: true,
