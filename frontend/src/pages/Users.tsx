@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, Plus, Mail, Phone, Shield, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -17,6 +17,7 @@ interface User {
   emergencyContactPhone?: string
   createdAt: string
   isActive?: boolean
+  profileImage?: string
 }
 
 const Users: React.FC = () => {
@@ -31,7 +32,7 @@ const Users: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchUsers = () => {
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
@@ -41,6 +42,7 @@ const Users: React.FC = () => {
           }
         })
         .catch(error => {
+          console.error('Failed to fetch users:', error)
           // Устанавливаем демо данные для разработки
           setUsers([
             {
@@ -111,6 +113,7 @@ const Users: React.FC = () => {
           setLoading(false)
         })
     }
+
     fetchUsers()
   }, [])
 
@@ -212,9 +215,7 @@ const Users: React.FC = () => {
     user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-    .filter(user => showArchived ? true : user.isActive !== false
-    )
+  ).filter(user => showArchived ? true : user.isActive !== false)
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -271,15 +272,15 @@ const Users: React.FC = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Поиск пользователей..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Поиск пользователей..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
@@ -326,11 +327,19 @@ const Users: React.FC = () => {
                 <tr key={user._id} className={`hover:bg-gray-50 ${user.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm font-medium">
-                          {user.first_name[0]}{user.last_name[0]}
-                        </span>
-                      </div>
+                      {user.profileImage ? (
+                        <img
+                          src={user.profileImage}
+                          alt={`${user.first_name} ${user.last_name}`}
+                          className="h-10 w-10 rounded-full object-cover border border-indigo-200"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
+                            {user.first_name[0]}{user.last_name[0]}
+                          </span>
+                        </div>
+                      )}
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
                           {user.first_name} {user.last_name}
@@ -390,25 +399,25 @@ const Users: React.FC = () => {
                     <div className="flex space-x-2">
                       <button
                         className="text-indigo-600 hover:text-indigo-900"
-                        onClick={() => handleViewUser(user)}
+                        onClick={() => handleViewUser(user)} 
                         title="Просмотр информации о пользователе">
                         <Eye className="h-4 w-4" />
                       </button>
                       {currentUser.role === 'admin' && (
                         <>
                           <button className="text-gray-600 hover:text-gray-900"
-                            onClick={() => handleEditUser(user)}
+                            onClick={() => handleEditUser(user)} 
                             title="Редактировать пользователя">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button
+                          <button 
                             onClick={() => handleArchiveUser(user)}
                             className={`${user.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
                             title={user.isActive === false ? 'Восстановить пользователя' : 'Архивировать пользователя'}
                           >
                             {user.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                           </button>
-                          <button
+                          <button 
                             onClick={() => handleDeleteUser(user)}
                             className="text-red-600 hover:text-red-900"
                             title="Удалить пользователя"

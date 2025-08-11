@@ -16,6 +16,7 @@ interface User {
   createdAt?: string
   updatedAt?: string
   isActive?: boolean
+  profileImage?: string
 }
 
 interface UserDetailProps {
@@ -82,9 +83,17 @@ const UserDetail: React.FC<UserDetailProps> = ({ isOpen, onClose, user }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
-            <div className="h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center">
-              <User className="h-8 w-8 text-white" />
-            </div>
+            {user.profileImage ? (
+              <img
+                src={user.profileImage}
+                alt={`${user.first_name} ${user.last_name}`}
+                className="h-16 w-16 rounded-full object-cover border-2 border-indigo-200"
+              />
+            ) : (
+              <div className="h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center">
+                <User className="h-8 w-8 text-white" />
+              </div>
+            )}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
                 {user.first_name} {user.last_name}
@@ -196,8 +205,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ isOpen, onClose, user }) => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Статус:</span>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      user.isActive !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
                       {user.isActive !== false ? 'Активен' : 'Архивирован'}
                     </span>
                   </div>
