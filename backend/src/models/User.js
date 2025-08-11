@@ -43,10 +43,10 @@ const userSchema = new mongoose.Schema({
     enum: ['basic', 'premium', 'elite'],
     default: 'basic'
   },
-  is_active: {
-    type: Boolean,
-    default: true
-  },
+  // is_active: {
+  //   type: Boolean,
+  //   default: true
+  // },
   isActive: {
     type: Boolean,
     default: true
@@ -81,6 +81,9 @@ userSchema.pre('save', async function (next) {
 
 // Method to compare passwords during login
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  console.log('\ncomparing passwords candidatePassword:', candidatePassword
+    , '\nwith password:', this.password, '\n'
+  );
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {

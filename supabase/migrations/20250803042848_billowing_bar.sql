@@ -5,7 +5,7 @@
   
   1. Sample Users
     - Admin user
-    - Trainers
+    - trainers
     - Members with different tiers
     
   2. Sample Horses
@@ -56,7 +56,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert sample events
 INSERT INTO events (id, title, description, event_type, start_date, end_date, organizer_id, max_participants, registration_fee) VALUES
   ('e1111111-1111-1111-1111-111111111111', 'Winter Dressage Competition', 'Annual winter dressage competition for all levels', 'competition', '2024-12-28 08:00:00+00', '2024-12-28 18:00:00+00', '22222222-2222-2222-2222-222222222222', 50, 45.00),
-  ('e2222222-2222-2222-2222-222222222222', 'Jumping Clinic with Expert Trainer', 'Two-day intensive jumping clinic', 'clinic', '2025-01-15 09:00:00+00', '2025-01-16 17:00:00+00', '33333333-3333-3333-3333-333333333333', 20, 180.00),
+  ('e2222222-2222-2222-2222-222222222222', 'Jumping Clinic with Expert trainer', 'Two-day intensive jumping clinic', 'clinic', '2025-01-15 09:00:00+00', '2025-01-16 17:00:00+00', '33333333-3333-3333-3333-333333333333', 20, 180.00),
   ('e3333333-3333-3333-3333-333333333333', 'New Year Social Ride', 'Celebratory group ride and BBQ', 'social', '2025-01-01 11:00:00+00', '2025-01-01 16:00:00+00', '22222222-2222-2222-2222-222222222222', 30, 25.00)
 ON CONFLICT (id) DO NOTHING;
 

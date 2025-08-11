@@ -53,7 +53,7 @@ const Events: React.FC = () => {
             },
             {
               _id: '2',
-              title: 'Jumping Clinic with Expert Trainer',
+              title: 'Jumping Clinic with Expert trainer',
               description: 'Two-day intensive jumping clinic',
               eventType: 'clinic',
               startDate: '2025-01-15T09:00:00Z',

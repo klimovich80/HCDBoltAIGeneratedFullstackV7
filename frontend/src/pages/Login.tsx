@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Users as Horse, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -17,7 +17,7 @@ const Login: React.FC = () => {
 
     login(email, password)
       .catch(err => {
-        setError('Invalid email or password')
+        setError('Invalid email or password: ' + err.message)
       })
       .finally(() => {
         setLoading(false)

@@ -319,7 +319,7 @@ const Horses: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">{horse.breed}</div>
+                      <div className="text-sm text-gray-500">&nbsp;{horse.breed}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

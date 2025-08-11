@@ -82,18 +82,11 @@ router.post('/', auth, authorize('admin'), (req, res) => {
           message: 'Пользователь с таким email уже существует'
         });
       }
-
-      // Hash password with bcrypt
-      logger.info(`Hashing password for new user: ${email}`);
-      const saltRounds = 12;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-      logger.info(`Password hashed successfully for user: ${email}`);
-      // Prepare user data with hashed password
       const userData = {
         first_name: first_name,
         last_name: last_name,
         email,
-        password: hashedPassword, // Use the hashed password
+        password,
         role,
         phone: phone || undefined,
         membership_tier: role === 'member' ? membershipTier : undefined,

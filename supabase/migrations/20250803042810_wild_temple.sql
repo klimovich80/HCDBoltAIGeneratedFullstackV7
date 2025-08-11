@@ -213,7 +213,7 @@ CREATE POLICY "Users can update their own profile" ON users
 CREATE POLICY "Everyone can read horses" ON horses
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Trainers and admins can manage horses" ON horses
+CREATE POLICY "trainers and admins can manage horses" ON horses
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 
@@ -228,7 +228,7 @@ CREATE POLICY "Users can read relevant lessons" ON lessons
     EXISTS (SELECT 1 FROM users u WHERE u.auth_user_id = auth.uid() AND u.role IN ('admin', 'trainer'))
   );
 
-CREATE POLICY "Trainers and admins can manage lessons" ON lessons
+CREATE POLICY "trainers and admins can manage lessons" ON lessons
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 
@@ -239,7 +239,7 @@ CREATE POLICY "Trainers and admins can manage lessons" ON lessons
 CREATE POLICY "Everyone can read events" ON events
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Trainers and admins can manage events" ON events
+CREATE POLICY "trainers and admins can manage events" ON events
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 
@@ -250,7 +250,7 @@ CREATE POLICY "Trainers and admins can manage events" ON events
 CREATE POLICY "Everyone can read equipment" ON equipment
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Trainers and admins can manage equipment" ON equipment
+CREATE POLICY "trainers and admins can manage equipment" ON equipment
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 
@@ -261,7 +261,7 @@ CREATE POLICY "Trainers and admins can manage equipment" ON equipment
 CREATE POLICY "Everyone can read feed records" ON feed_records
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Trainers and admins can manage feed records" ON feed_records
+CREATE POLICY "trainers and admins can manage feed records" ON feed_records
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 
@@ -286,7 +286,7 @@ CREATE POLICY "Admins and trainers can manage payments" ON payments
 CREATE POLICY "Everyone can read stall assignments" ON stall_assignments
   FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Trainers and admins can manage stall assignments" ON stall_assignments
+CREATE POLICY "trainers and admins can manage stall assignments" ON stall_assignments
   FOR ALL TO authenticated 
   USING (EXISTS (
     SELECT 1 FROM users u 

@@ -31,7 +31,7 @@ const Users: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchUsers = () => {
       apiClient.getAll<{ success: boolean; data: User[] }>('users')
         .then(response => {
@@ -112,7 +112,7 @@ const Users: React.FC = () => {
         })
     }
     fetchUsers()
-    }, [])
+  }, [])
 
   // Разрешить доступ только администраторам и тренерам
   if (!currentUser || !['admin', 'trainer'].includes(currentUser.role)) {
@@ -214,7 +214,7 @@ const Users: React.FC = () => {
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
     .filter(user => showArchived ? true : user.isActive !== false
-  )
+    )
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -271,15 +271,15 @@ const Users: React.FC = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск пользователей..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск пользователей..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
@@ -390,25 +390,25 @@ const Users: React.FC = () => {
                     <div className="flex space-x-2">
                       <button
                         className="text-indigo-600 hover:text-indigo-900"
-                        onClick={() => handleViewUser(user)} 
+                        onClick={() => handleViewUser(user)}
                         title="Просмотр информации о пользователе">
                         <Eye className="h-4 w-4" />
                       </button>
                       {currentUser.role === 'admin' && (
                         <>
                           <button className="text-gray-600 hover:text-gray-900"
-                            onClick={() => handleEditUser(user)} 
+                            onClick={() => handleEditUser(user)}
                             title="Редактировать пользователя">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleArchiveUser(user)}
                             className={`${user.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
                             title={user.isActive === false ? 'Восстановить пользователя' : 'Архивировать пользователя'}
                           >
                             {user.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleDeleteUser(user)}
                             className="text-red-600 hover:text-red-900"
                             title="Удалить пользователя"

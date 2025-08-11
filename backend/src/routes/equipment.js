@@ -9,9 +9,9 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, category, condition, assignedHorse } = req.query;
-    
+
     let query = { isActive: true };
-    
+
     if (category) query.category = category;
     if (condition) query.condition = condition;
     if (assignedHorse) query.assignedHorse = assignedHorse;
@@ -45,7 +45,7 @@ router.get('/:id', auth, async (req, res) => {
   try {
     const equipment = await Equipment.findById(req.params.id)
       .populate('assignedHorse', 'name breed age');
-    
+
     if (!equipment || !equipment.isActive) {
       return res.status(404).json({ message: 'Снаряжение не найдено' });
     }
@@ -84,7 +84,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const equipment = await Equipment.findById(req.params.id);
-    
+
     if (!equipment || !equipment.isActive) {
       return res.status(404).json({ message: 'Снаряжение не найдено' });
     }
@@ -112,7 +112,7 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const equipment = await Equipment.findById(req.params.id);
-    
+
     if (!equipment) {
       return res.status(404).json({ message: 'Снаряжение не найдено' });
     }

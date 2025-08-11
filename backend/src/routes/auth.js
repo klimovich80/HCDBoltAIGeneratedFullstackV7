@@ -192,8 +192,8 @@ router.post('/login', (req, res) => {
     User.findOne({ email })
       .then(user => {
         if (!user) {
-          logger.warn(`Login failed - user not found: ${email}`);
-          res.status(400).json({ message: 'Неверные учетные данные' });
+          logger.warn(`Login failed - user not found ${email}`);
+          res.status(400).json({ message: 'Неверные учетные данные, пользователь с :' + email + ' не найден' });
           return;
         }
 
@@ -210,7 +210,7 @@ router.post('/login', (req, res) => {
       .then(isMatch => {
         if (!isMatch) {
           logger.warn(`Login failed - invalid password for user: ${email}`);
-          res.status(400).json({ message: 'Неверные учетные данные' });
+          res.status(400).json({ message: 'Неверные учетные данные с паролем: ', password });
           return;
         }
 
