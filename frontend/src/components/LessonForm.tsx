@@ -147,8 +147,8 @@ const LessonForm: React.FC<LessonFormProps> = ({
   // Update form data when lesson prop changes
   useEffect(() => {
     if (lesson && mode === 'edit') {
-      const scheduledDate = new Date(lesson.scheduled_date)
-      const formattedDate = scheduledDate.toISOString().slice(0, 16) // Format for datetime-local input
+      const scheduled_date = new Date(lesson.scheduled_date)
+      const formattedDate = scheduled_date.toISOString().slice(0, 16) // Format for datetime-local input
 
       setFormData({
         title: lesson.title,
@@ -190,15 +190,16 @@ const LessonForm: React.FC<LessonFormProps> = ({
     e.preventDefault()
     setLoading(true)
     setError('')
+    console.log('handling lesson form submit')
 
     try {
       // Convert datetime-local to ISO string
-      const scheduledDate = new Date(formData.scheduled_date).toISOString()
+      const scheduled_date = new Date(formData.scheduled_date).toISOString()
 
       // Clean data for API
       const cleanedData = {
         ...formData,
-        scheduled_date: scheduledDate,
+        scheduled_date: scheduled_date,
         horse_id: formData.horse_id || undefined,
         description: formData.description || undefined,
         notes: formData.notes || undefined
@@ -212,7 +213,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
 
       onSuccess()
       onClose()
-      setError('')
+      setError('unable to send data from form')
     } catch (err: any) {
       setError(err.message || `Failed to ${mode} lesson`)
     } finally {

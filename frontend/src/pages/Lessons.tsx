@@ -19,12 +19,12 @@ interface Lesson {
     first_name: string
     last_name: string
   }
-  scheduledDate: string
-  durationMinutes: number
-  lessonType: 'private' | 'group' | 'training'
+  scheduled_date: string
+  duration_minutes: number
+  lesson_type: 'private' | 'group' | 'training'
   status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
   cost: number
-  paymentStatus: 'pending' | 'paid' | 'overdue'
+  payment_status: 'pending' | 'paid' | 'overdue'
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
@@ -59,12 +59,12 @@ const Lessons: React.FC = () => {
               instructor: { first_name: 'Sarah', last_name: 'Johnson' },
               horse: { name: 'Spirit', breed: 'Mustang' },
               member: { first_name: 'Emma', last_name: 'Williams' },
-              scheduledDate: '2024-12-20T10:00:00Z',
-              durationMinutes: 60,
-              lessonType: 'private',
+              scheduled_date: '2024-12-20T10:00:00Z',
+              duration_minutes: 60,
+              lesson_type: 'private',
               status: 'scheduled',
               cost: 85,
-              paymentStatus: 'pending'
+              payment_status: 'pending'
             },
             {
               _id: '2',
@@ -72,12 +72,12 @@ const Lessons: React.FC = () => {
               instructor: { first_name: 'Michael', last_name: 'Chen' },
               horse: { name: 'Thunder', breed: 'Thoroughbred' },
               member: { first_name: 'Sophie', last_name: 'Davis' },
-              scheduledDate: '2024-12-20T14:00:00Z',
-              durationMinutes: 90,
-              lessonType: 'private',
+              scheduled_date: '2024-12-20T14:00:00Z',
+              duration_minutes: 90,
+              lesson_type: 'private',
               status: 'scheduled',
               cost: 120,
-              paymentStatus: 'paid'
+              payment_status: 'paid'
             },
             {
               _id: '3',
@@ -85,12 +85,12 @@ const Lessons: React.FC = () => {
               instructor: { first_name: 'Sarah', last_name: 'Johnson' },
               horse: { name: 'Star', breed: 'Quarter Horse' },
               member: { first_name: 'James', last_name: 'Brown' },
-              scheduledDate: '2024-12-21T09:00:00Z',
-              durationMinutes: 120,
-              lessonType: 'group',
+              scheduled_date: '2024-12-21T09:00:00Z',
+              duration_minutes: 120,
+              lesson_type: 'group',
               status: 'scheduled',
               cost: 65,
-              paymentStatus: 'pending',
+              payment_status: 'pending',
               isActive: true
             }
           ])
@@ -205,7 +205,7 @@ const Lessons: React.FC = () => {
     }
   }
 
-  const getPaymentStatusColor = (status: string) => {
+  const getpayment_statusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800'
       case 'pending': return 'bg-yellow-100 text-yellow-800'
@@ -324,7 +324,7 @@ const Lessons: React.FC = () => {
                         )}
                       </div>
                       <div className="text-sm text-gray-500 capitalize">
-                        {lesson.lessonType === 'private' ? 'индивидуальное' : lesson.lessonType === 'group' ? 'групповое' : 'тренировка'}
+                        {lesson.lesson_type === 'private' ? 'индивидуальное' : lesson.lesson_type === 'group' ? 'групповое' : 'тренировка'}
                       </div>
                     </div>
                   </td>
@@ -332,10 +332,10 @@ const Lessons: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       <div>
-                        <div className="text-sm text-gray-900">{formatDate(lesson.scheduledDate)}</div>
+                        <div className="text-sm text-gray-900">{formatDate(lesson.scheduled_date)}</div>
                         <div className="text-sm text-gray-500 flex items-center">
                           <Clock className="h-3 w-3 mr-1" />
-                          {formatTime(lesson.scheduledDate)} ({lesson.durationMinutes} мин)
+                          {formatTime(lesson.scheduled_date)} ({lesson.duration_minutes} мин)
                         </div>
                       </div>
                     </div>
@@ -369,8 +369,8 @@ const Lessons: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{lesson.cost}₽</div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(lesson.paymentStatus)}`}>
-                        {lesson.paymentStatus === 'paid' ? 'оплачено' : lesson.paymentStatus === 'pending' ? 'ожидает' : 'просрочено'}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getpayment_statusColor(lesson.payment_status)}`}>
+                        {lesson.payment_status === 'paid' ? 'оплачено' : lesson.payment_status === 'pending' ? 'ожидает' : 'просрочено'}
                       </span>
                     </div>
                   </td>

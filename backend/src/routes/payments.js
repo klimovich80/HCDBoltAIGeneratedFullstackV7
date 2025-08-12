@@ -109,7 +109,7 @@ router.patch('/:id/status', auth, authorize('admin', 'trainer'), async (req, res
     }
 
     await payment.save();
-    await payment.populate('member', 'first_name last_name email');
+    await payment.populate('member', 'firstName lastName email');
 
     logger.info(`Обновлен статус платежа ${payment.invoiceNumber}: ${status}`);
 

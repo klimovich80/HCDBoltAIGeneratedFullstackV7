@@ -117,8 +117,7 @@ router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
       return res.status(404).json({ message: 'Снаряжение не найдено' });
     }
 
-    equipment.isActive = false;
-    await equipment.save();
+    await equipment.deleteOne();
 
     logger.info(`Удалено снаряжение: ${equipment.name}`);
 
@@ -128,6 +127,32 @@ router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
     });
   } catch (error) {
     logger.error('Ошибка удаления снаряжения:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Архивировать/восстановить снаряжение
+router.patch('/:id/archive', auth, authorize('admin', 'trainer'), async (req, res) => {
+  try {
+    const equipment = await Equipment.findById(req.params.id);
+
+    if (!equipment) {
+      return res.status(404).json({ message: 'Снаряжение не найдено' });
+    }
+
+    equipment.isActive = req.body.isActive !== undefined ? req.body.isActive : !equipment.isActive;
+    await equipment.save();
+
+    const action = equipment.isActive ? 'восстановлено' : 'архивировано';
+    logger.info(`Снаряжение ${action}: ${equipment.name}`);
+
+    res.json({
+      success: true,
+      data: equipment,
+      message: `Снаряжение успешно ${action}`
+    });
+  } catch (error) {
+    logger.error('Ошибка архивирования снаряжения:', error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

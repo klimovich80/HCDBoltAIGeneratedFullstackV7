@@ -79,6 +79,7 @@ router.get('/:id', auth, async (req, res) => {
 
 // Создать занятие
 router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
+  console.log('req.body creating lesson @routes/lessons.js', req.body);
   try {
     const lesson = new Lesson(req.body);
     await lesson.save();
@@ -96,8 +97,8 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
       data: lesson
     });
   } catch (error) {
-    logger.error('Ошибка создания занятия:', error);
-    res.status(500).json({ message: 'Ошибка сервера' });
+    logger.error('Ошибка создания занятия @routes/lessons.js: \n', error);
+    res.status(500).json({ message: 'Ошибка сервера\n' });
   }
 });
 

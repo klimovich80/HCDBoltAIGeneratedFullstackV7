@@ -95,7 +95,7 @@ class ApiClient {
     return this.request<T>(`/${resource}/${id}`);
   }
 
-  create<T>(resource: string, data: any): Promise<T> {
+  create<T>(resource: string, data: JSON): Promise<T> {
     console.log('api.ts posting created: ', data ," to ", resource);
     return this.request<T>(`/${resource}`, {
       method: 'POST',
@@ -103,7 +103,7 @@ class ApiClient {
     });
   }
 
-  update<T>(resource: string, id: string, data: any): Promise<T> {
+  update<T>(resource: string, id: string, data: JSON): Promise<T> {
     console.log('api.ts posting updated: ', data ," to ", resource);
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',

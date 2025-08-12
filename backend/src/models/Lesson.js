@@ -13,7 +13,7 @@ const lessonSchema = new mongoose.Schema({
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Инструктор обязателен']
+    required: [true, 'Инструктор обязателен\n']
   },
   horse: {
     type: mongoose.Schema.Types.ObjectId,
@@ -22,22 +22,22 @@ const lessonSchema = new mongoose.Schema({
   member: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Участник обязателен']
+    required: [true, 'Участник обязателен\n']
   },
-  scheduledDate: {
+  scheduled_date: {
     type: Date,
     required: [true, 'Дата урока обязательна']
   },
-  durationMinutes: {
+  duration_minutes: {
     type: Number,
     required: [true, 'Продолжительность обязательна'],
     default: 60,
     min: 15,
     max: 240
   },
-  lessonType: {
+  lesson_type: {
     type: String,
-    required: [true, 'Тип урока обязателен'],
+    required: [true, 'Тип урока обязателен\n'],
     enum: ['private', 'group', 'training']
   },
   status: {
@@ -51,7 +51,7 @@ const lessonSchema = new mongoose.Schema({
     min: 0,
     default: 0
   },
-  paymentStatus: {
+  payment_status: {
     type: String,
     enum: ['pending', 'paid', 'overdue'],
     default: 'pending'
@@ -69,7 +69,7 @@ const lessonSchema = new mongoose.Schema({
 });
 
 // Индексы
-lessonSchema.index({ scheduledDate: 1 });
+lessonSchema.index({ scheduled_date: 1 });
 lessonSchema.index({ instructor: 1 });
 lessonSchema.index({ member: 1 });
 lessonSchema.index({ status: 1 });

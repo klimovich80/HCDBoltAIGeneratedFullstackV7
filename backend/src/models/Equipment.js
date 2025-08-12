@@ -73,5 +73,6 @@ const equipmentSchema = new mongoose.Schema({
 equipmentSchema.index({ category: 1 });
 equipmentSchema.index({ assignedHorse: 1 });
 equipmentSchema.index({ condition: 1 });
+equipmentSchema.index({ isActive: 1 });
 
 module.exports = mongoose.model('Equipment', equipmentSchema);
