@@ -1,6 +1,7 @@
 import React from 'react'
 import { X, Calendar, Clock, User, Users as Horse, DollarSign, FileText } from 'lucide-react'
 
+// Интерфейс для урока
 interface Lesson {
   _id: string
   title: string
@@ -33,6 +34,7 @@ interface Lesson {
   updatedAt?: string
 }
 
+// Интерфейс для пропсов компонента
 interface LessonDetailProps {
   isOpen: boolean
   onClose: () => void
@@ -40,8 +42,10 @@ interface LessonDetailProps {
 }
 
 const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) => {
+  // Не отображать компонент, если он закрыт или урок не передан
   if (!isOpen || !lesson) return null
 
+  // Функция для получения цвета статуса урока
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800'
@@ -52,6 +56,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для получения цвета статуса оплаты
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800'
@@ -61,6 +66,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для получения текстового представления типа урока
   const getLessonTypeLabel = (type: string) => {
     switch (type) {
       case 'private': return 'Индивидуальное'
@@ -70,6 +76,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для получения текстового представления статуса урока
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'scheduled': return 'Запланировано'
@@ -80,6 +87,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для получения текстового представления статуса оплаты
   const getPaymentStatusLabel = (status: string) => {
     switch (status) {
       case 'paid': return 'Оплачено'
@@ -89,6 +97,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для форматирования даты и времени урока
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
     return {
@@ -104,6 +113,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     }
   }
 
+  // Функция для форматирования даты создания/обновления
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Не указано'
     const date = new Date(dateString)
@@ -116,21 +126,28 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
     })
   }
 
+  // Форматирование даты и времени урока для отображения
   const { date, time } = formatDateTime(lesson.scheduled_date)
 
   return (
+    // Модальное окно с затемненным фоном
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {/* Основной контейнер модального окна */}
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Шапка модального окна с заголовком и кнопкой закрытия */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-4">
+            {/* Иконка календаря */}
             <div className="h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center">
               <Calendar className="h-6 w-6 text-white" />
             </div>
+            {/* Заголовок и тип урока с датой */}
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{lesson.title}</h2>
               <p className="text-gray-600">{getLessonTypeLabel(lesson.lesson_type)} • {date}</p>
             </div>
           </div>
+          {/* Кнопка закрытия модального окна */}
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -139,17 +156,22 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
           </button>
         </div>
 
+        {/* Основное содержимое модального окна */}
         <div className="p-6">
+          {/* Сетка с двумя колонками для информации */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Lesson Information */}
+            {/* Левая колонка - информация о занятии и участниках */}
             <div className="space-y-6">
+              {/* Блок информации о занятии */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Информация о занятии</h3>
                 <div className="space-y-3">
+                  {/* Тип занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Тип занятия:</span>
                     <span className="font-medium">{getLessonTypeLabel(lesson.lesson_type)}</span>
                   </div>
+                  {/* Дата занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Дата:</span>
                     <span className="font-medium flex items-center">
@@ -157,6 +179,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                       {date}
                     </span>
                   </div>
+                  {/* Время занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Время:</span>
                     <span className="font-medium flex items-center">
@@ -164,10 +187,12 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                       {time}
                     </span>
                   </div>
+                  {/* Продолжительность занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Продолжительность:</span>
                     <span className="font-medium">{lesson.duration_minutes} минут</span>
                   </div>
+                  {/* Статус занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Статус:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lesson.status)}`}>
@@ -177,10 +202,11 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                 </div>
               </div>
 
-              {/* Participants */}
+              {/* Блок участников */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Участники</h3>
                 <div className="space-y-4">
+                  {/* Карточка инструктора */}
                   <div className="bg-blue-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                       <User className="h-4 w-4 mr-2" />
@@ -197,6 +223,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                     </div>
                   </div>
 
+                  {/* Карточка участника */}
                   <div className="bg-green-50 rounded-lg p-4">
                     <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                       <User className="h-4 w-4 mr-2" />
@@ -213,6 +240,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                     </div>
                   </div>
 
+                  {/* Карточка лошади (если назначена) */}
                   {lesson.horse && (
                     <div className="bg-yellow-50 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -232,11 +260,13 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
               </div>
             </div>
 
-            {/* Payment and Notes */}
+            {/* Правая колонка - оплата и заметки */}
             <div className="space-y-6">
+              {/* Блок оплаты */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Оплата</h3>
                 <div className="space-y-3">
+                  {/* Стоимость занятия */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Стоимость:</span>
                     <span className="text-2xl font-bold text-gray-900 flex items-center">
@@ -244,6 +274,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                       {lesson.cost.toLocaleString()}₽
                     </span>
                   </div>
+                  {/* Статус оплаты */}
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Статус оплаты:</span>
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(lesson.payment_status)}`}>
@@ -253,7 +284,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                 </div>
               </div>
 
-              {/* Description */}
+              {/* Описание занятия (если есть) */}
               {lesson.description && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -266,7 +297,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
                 </div>
               )}
 
-              {/* Notes */}
+              {/* Заметки (если есть) */}
               {lesson.notes && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -281,7 +312,7 @@ const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) 
             </div>
           </div>
 
-          {/* Footer with timestamps */}
+          {/* Футер с датами создания и обновления (если есть) */}
           {(lesson.createdAt || lesson.updatedAt) && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="flex justify-between text-sm text-gray-500">

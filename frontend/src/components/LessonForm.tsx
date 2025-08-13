@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 
+// Интерфейс для данных формы урока
 interface LessonFormData {
   title: string
   description?: string
@@ -17,6 +18,7 @@ interface LessonFormData {
   notes?: string
 }
 
+// Интерфейс для пропсов компонента формы
 interface LessonFormProps {
   isOpen: boolean
   onClose: () => void
@@ -25,6 +27,7 @@ interface LessonFormProps {
   mode?: 'create' | 'edit'
 }
 
+// Интерфейс для урока
 interface Lesson {
   _id: string
   title: string
@@ -53,6 +56,7 @@ interface Lesson {
   notes?: string
 }
 
+// Интерфейс для пользователя
 interface User {
   _id: string
   first_name: string
@@ -60,6 +64,7 @@ interface User {
   role: string
 }
 
+// Интерфейс для лошади
 interface Horse {
   _id: string
   name: string
@@ -73,6 +78,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
   lesson = null,
   mode = 'create'
 }) => {
+  // Состояние для данных формы
   const [formData, setFormData] = useState<LessonFormData>({
     title: '',
     description: '',
@@ -87,69 +93,76 @@ const LessonForm: React.FC<LessonFormProps> = ({
     payment_status: 'pending',
     notes: ''
   })
+  
+  // Состояния для загрузки и ошибок
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  
+  // Состояния для списков данных
   const [instructors, setInstructors] = useState<User[]>([])
   const [members, setMembers] = useState<User[]>([])
   const [horses, setHorses] = useState<Horse[]>([])
   const [loadingData, setLoadingData] = useState(true)
 
-  // Load instructors, members, and horses
+  // Эффект для загрузки данных инструкторов, участников и лошадей
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoadingData(true)
 
-        // Load instructors (trainers and admins)
+        // Загрузка инструкторов (тренеров)
         const instructorsResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'trainer' })
         if (instructorsResponse.success) {
           setInstructors(instructorsResponse.data)
         }
 
-        // Load members
+        // Загрузка участников
         const membersResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'member' })
         if (membersResponse.success) {
           setMembers(membersResponse.data)
         }
 
-        // Load horses
+        // Загрузка лошадей
         const horsesResponse = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
         if (horsesResponse.success) {
           setHorses(horsesResponse.data)
         }
       } catch (error) {
-        console.error('Failed to load data:', error)
-        // Set demo data for development
+        console.error('Не удалось загрузить данные:', error)
+        // Установка демонстрационных данных для разработки
         setInstructors([
-          { _id: '1', first_name: 'Sarah', last_name: 'Johnson', role: 'trainer' },
-          { _id: '2', first_name: 'Michael', last_name: 'Chen', role: 'trainer' }
+          { _id: '1', first_name: 'Сара', last_name: 'Джонсон', role: 'trainer' },
+          { _id: '2', first_name: 'Майкл', last_name: 'Чен', role: 'trainer' }
         ])
         setMembers([
-          { _id: '3', first_name: 'Emma', last_name: 'Williams', role: 'member' },
-          { _id: '4', first_name: 'James', last_name: 'Brown', role: 'member' },
-          { _id: '5', first_name: 'Sophie', last_name: 'Davis', role: 'member' }
+          { _id: '3', first_name: 'Эмма', last_name: 'Уильямс', role: 'member' },
+          { _id: '4', first_name: 'Джеймс', last_name: 'Браун', role: 'member' },
+          { _id: '5', first_name: 'Софи', last_name: 'Дэвис', role: 'member' }
         ])
         setHorses([
-          { _id: '1', name: 'Thunder', breed: 'Thoroughbred' },
-          { _id: '2', name: 'Moonlight', breed: 'Arabian' },
-          { _id: '3', name: 'Star', breed: 'Quarter Horse' }
+          { _id: '1', name: 'Гром', breed: 'Т thoroughbred' },
+          { _id: '2', name: 'Лунный свет', breed: 'Арабская' },
+          { _id: '3', name: 'Звезда', breed: 'Квотер хорс' }
         ])
       } finally {
         setLoadingData(false)
       }
     }
 
+    // Загрузка данных только если форма открыта
     if (isOpen) {
       loadData()
     }
   }, [isOpen])
 
-  // Update form data when lesson prop changes
+  // Эффект для обновления данных формы при изменении урока или режима
   useEffect(() => {
     if (lesson && mode === 'edit') {
+      // Форматирование даты для поля ввода datetime-local
       const scheduled_date = new Date(lesson.scheduled_date)
-      const formattedDate = scheduled_date.toISOString().slice(0, 16) // Format for datetime-local input
+      const formattedDate = scheduled_date.toISOString().slice(0, 16)
 
+      // Заполнение формы данными редактируемого урока
       setFormData({
         title: lesson.title,
         description: lesson.description || '',
@@ -165,9 +178,12 @@ const LessonForm: React.FC<LessonFormProps> = ({
         notes: lesson.notes || ''
       })
     } else if (mode === 'create') {
-      // Reset form for create mode
-      const now = new Date()
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset()) // Adjust for timezone
+      // Сброс формы для режима создания
+      // Установка даты на 1 день вперед от текущего времени
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 1);
+      futureDate.setHours(10, 0, 0, 0); // Установка времени на 10:00
+      const formattedDate = futureDate.toISOString().slice(0, 16);
 
       setFormData({
         title: '',
@@ -175,7 +191,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
         instructor_id: '',
         horse_id: '',
         member_id: '',
-        scheduled_date: now.toISOString().slice(0, 16),
+        scheduled_date: formattedDate,
         duration_minutes: 60,
         lesson_type: 'private',
         status: 'scheduled',
@@ -186,56 +202,66 @@ const LessonForm: React.FC<LessonFormProps> = ({
     }
   }, [lesson, mode])
 
+  // Обработчик отправки формы
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    console.log('handling lesson form submit')
 
     try {
-      // Convert datetime-local to ISO string
-      const scheduled_date = new Date(formData.scheduled_date).toISOString()
+      console.log('Отправка данных формы:', formData)
 
-      // Clean data for API
-      const cleanedData = {
-        ...formData,
-        scheduled_date: scheduled_date,
-        horse_id: formData.horse_id || undefined,
-        description: formData.description || undefined,
-        notes: formData.notes || undefined
+      // Проверка обязательных полей
+      if (!formData.title.trim()) {
+        throw new Error('Название урока обязательно')
+      }
+      if (!formData.instructor_id) {
+        throw new Error('Инструктор обязателен')
+      }
+      if (!formData.member_id) {
+        throw new Error('Участник обязателен')
+      }
+      if (!formData.scheduled_date) {
+        throw new Error('Дата урока обязательна')
       }
 
       if (mode === 'edit' && lesson) {
-        await apiClient.update('lessons', lesson._id, cleanedData)
+        await apiClient.updateLesson(lesson._id, formData)
       } else {
-        await apiClient.create('lessons', cleanedData)
+        await apiClient.createLesson(formData)
       }
 
+      // Вызов колбэков при успешной отправке
       onSuccess()
       onClose()
-      setError('unable to send data from form')
     } catch (err: any) {
-      setError(err.message || `Failed to ${mode} lesson`)
+      // Обработка ошибок
+      console.error('Ошибка отправки формы:', err)
+      const errorMessage = err.response?.data?.message || err.message || `Не удалось ${mode === 'edit' ? 'обновить' : 'создать'} урок`
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
+  // Обработчик изменения полей формы
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: name === 'duration_minutes' || name === 'cost'
-        ? parseFloat(value) || 0
+        ? parseFloat(value) || 0  // Преобразование числовых значений
         : value
     }))
   }
 
+  // Не отображать компонент, если форма закрыта
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Заголовок формы */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">
             {mode === 'edit' ? 'Редактировать занятие' : 'Создать занятие'}
@@ -243,11 +269,13 @@ const LessonForm: React.FC<LessonFormProps> = ({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Закрыть"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
+        {/* Индикатор загрузки или форма */}
         {loadingData ? (
           <div className="p-6 flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -255,13 +283,16 @@ const LessonForm: React.FC<LessonFormProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Отображение ошибок */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
 
+            {/* Основная сетка формы */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Название урока */}
               <div className="md:col-span-2">
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                   Название занятия *
@@ -278,6 +309,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 />
               </div>
 
+              {/* Выбор инструктора */}
               <div>
                 <label htmlFor="instructor_id" className="block text-sm font-medium text-gray-700 mb-2">
                   Инструктор *
@@ -299,6 +331,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 </select>
               </div>
 
+              {/* Выбор участника */}
               <div>
                 <label htmlFor="member_id" className="block text-sm font-medium text-gray-700 mb-2">
                   Участник *
@@ -320,6 +353,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 </select>
               </div>
 
+              {/* Выбор лошади */}
               <div>
                 <label htmlFor="horse_id" className="block text-sm font-medium text-gray-700 mb-2">
                   Лошадь
@@ -340,6 +374,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 </select>
               </div>
 
+              {/* Тип урока */}
               <div>
                 <label htmlFor="lesson_type" className="block text-sm font-medium text-gray-700 mb-2">
                   Тип занятия *
@@ -358,6 +393,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 </select>
               </div>
 
+              {/* Дата и время урока */}
               <div>
                 <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700 mb-2">
                   Дата и время *
@@ -373,6 +409,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 />
               </div>
 
+              {/* Продолжительность урока */}
               <div>
                 <label htmlFor="duration_minutes" className="block text-sm font-medium text-gray-700 mb-2">
                   Продолжительность (минуты) *
@@ -390,6 +427,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 />
               </div>
 
+              {/* Стоимость урока */}
               <div>
                 <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
                   Стоимость (₽) *
@@ -407,6 +445,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 />
               </div>
 
+              {/* Статус урока */}
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
                   Статус
@@ -425,6 +464,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
                 </select>
               </div>
 
+              {/* Статус оплаты */}
               <div>
                 <label htmlFor="payment_status" className="block text-sm font-medium text-gray-700 mb-2">
                   Статус оплаты
@@ -443,6 +483,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
               </div>
             </div>
 
+            {/* Описание урока */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
                 Описание
@@ -458,6 +499,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
               />
             </div>
 
+            {/* Заметки */}
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
                 Заметки
@@ -473,6 +515,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
               />
             </div>
 
+            {/* Кнопки действий */}
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
