@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 
-// Интерфейс для данных формы урока
+// Интерфейсы для типов данных
+interface ApiErrorResponse {
+  message?: string;
+  success?: boolean;
+  errors?: string[];
+}
+
+interface ExtendedError extends Error {
+  response?: Response & {
+    data?: ApiErrorResponse;
+  };
+}
 interface LessonFormData {
   title: string
   description?: string
@@ -18,7 +29,6 @@ interface LessonFormData {
   notes?: string
 }
 
-// Интерфейс для пропсов компонента формы
 interface LessonFormProps {
   isOpen: boolean
   onClose: () => void
@@ -27,7 +37,6 @@ interface LessonFormProps {
   mode?: 'create' | 'edit'
 }
 
-// Интерфейс для урока
 interface Lesson {
   _id: string
   title: string
@@ -56,7 +65,6 @@ interface Lesson {
   notes?: string
 }
 
-// Интерфейс для пользователя
 interface User {
   _id: string
   first_name: string
@@ -64,7 +72,6 @@ interface User {
   role: string
 }
 
-// Интерфейс для лошади
 interface Horse {
   _id: string
   name: string
@@ -95,36 +102,36 @@ const LessonForm: React.FC<LessonFormProps> = ({
   })
   
   // Состояния для загрузки и ошибок
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>('')
   
   // Состояния для списков данных
   const [instructors, setInstructors] = useState<User[]>([])
   const [members, setMembers] = useState<User[]>([])
   const [horses, setHorses] = useState<Horse[]>([])
-  const [loadingData, setLoadingData] = useState(true)
+  const [loadingData, setLoadingData] = useState<boolean>(true)
 
   // Эффект для загрузки данных инструкторов, участников и лошадей
   useEffect(() => {
-    const loadData = async () => {
+    const loadData = async (): Promise<void> => {
       try {
         setLoadingData(true)
 
         // Загрузка инструкторов (тренеров)
-        const instructorsResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'trainer' })
-        if (instructorsResponse.success) {
+        const instructorsResponse = await apiClient.getAll<User>('users', { role: 'trainer' })
+        if (instructorsResponse.success && instructorsResponse.data) {
           setInstructors(instructorsResponse.data)
         }
 
         // Загрузка участников
-        const membersResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'member' })
-        if (membersResponse.success) {
+        const membersResponse = await apiClient.getAll<User>('users', { role: 'member' })
+        if (membersResponse.success && membersResponse.data) {
           setMembers(membersResponse.data)
         }
 
         // Загрузка лошадей
-        const horsesResponse = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
-        if (horsesResponse.success) {
+        const horsesResponse = await apiClient.getAll<Horse>('horses')
+        if (horsesResponse.success && horsesResponse.data) {
           setHorses(horsesResponse.data)
         }
       } catch (error) {
@@ -203,49 +210,59 @@ const LessonForm: React.FC<LessonFormProps> = ({
   }, [lesson, mode])
 
   // Обработчик отправки формы
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+  e.preventDefault()
+  setLoading(true)
+  setError('')
 
-    try {
-      console.log('Отправка данных формы:', formData)
+  try {
+    console.log('Отправка данных формы:', formData)
 
-      // Проверка обязательных полей
-      if (!formData.title.trim()) {
-        throw new Error('Название урока обязательно')
-      }
-      if (!formData.instructor_id) {
-        throw new Error('Инструктор обязателен')
-      }
-      if (!formData.member_id) {
-        throw new Error('Участник обязателен')
-      }
-      if (!formData.scheduled_date) {
-        throw new Error('Дата урока обязательна')
-      }
-
-      if (mode === 'edit' && lesson) {
-        await apiClient.updateLesson(lesson._id, formData)
-      } else {
-        await apiClient.createLesson(formData)
-      }
-
-      // Вызов колбэков при успешной отправке
-      onSuccess()
-      onClose()
-    } catch (err: any) {
-      // Обработка ошибок
-      console.error('Ошибка отправки формы:', err)
-      const errorMessage = err.response?.data?.message || err.message || `Не удалось ${mode === 'edit' ? 'обновить' : 'создать'} урок`
-      setError(errorMessage)
-    } finally {
-      setLoading(false)
+    // Проверка обязательных полей
+    if (!formData.title.trim()) {
+      throw new Error('Название урока обязательно')
     }
-  }
+    if (!formData.instructor_id) {
+      throw new Error('Инструктор обязателен')
+    }
+    if (!formData.member_id) {
+      throw new Error('Участник обязателен')
+    }
+    if (!formData.scheduled_date) {
+      throw new Error('Дата урока обязательна')
+    }
 
+    if (mode === 'edit' && lesson) {
+      await apiClient.updateLesson(lesson._id, formData)
+    } else {
+      await apiClient.createLesson(formData)
+    }
+
+    // Вызов колбэков при успешной отправке
+    onSuccess()
+    onClose()
+  } catch (err: unknown) {
+    // Обработка ошибок
+    console.error('Ошибка отправки формы:', err)
+    
+    let errorMessage = 'Произошла неизвестная ошибка';
+    
+    if (err instanceof Error) {
+      const extendedError = err as ExtendedError;
+      if (extendedError.response?.data?.message) {
+        errorMessage = extendedError.response.data.message;
+      } else {
+        errorMessage = extendedError.message;
+      }
+    }
+    
+    setError(errorMessage);
+  } finally {
+    setLoading(false)
+  }
+}
   // Обработчик изменения полей формы
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,

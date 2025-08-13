@@ -4,20 +4,30 @@ import { apiClient } from '../lib/api'
 import LessonForm from '../components/LessonForm'
 import LessonDetail from '../components/LessonDetail'
 
+// Унифицированный интерфейс Lesson (совместимый с LessonForm и LessonDetail)
 interface Lesson {
   _id: string
   title: string
+  description?: string
   instructor: {
+    _id: string
     first_name: string
     last_name: string
+    email?: string
+    phone?: string
   }
   horse?: {
+    _id: string
     name: string
     breed: string
+    age?: number
   }
   member: {
+    _id: string
     first_name: string
     last_name: string
+    email?: string
+    phone?: string
   }
   scheduled_date: string
   duration_minutes: number
@@ -25,163 +35,182 @@ interface Lesson {
   status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
   cost: number
   payment_status: 'pending' | 'paid' | 'overdue'
+  notes?: string
   isActive?: boolean
   createdAt?: string
   updatedAt?: string
 }
 
+// Типы для статусов
+type LessonStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+type PaymentStatus = 'pending' | 'paid' | 'overdue'
+
 const Lessons: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [showAddForm, setShowAddForm] = useState<boolean>(false)
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
-  const [showEditForm, setShowEditForm] = useState(false)
+  const [showEditForm, setShowEditForm] = useState<boolean>(false)
   const [viewingLesson, setViewingLesson] = useState<Lesson | null>(null)
-  const [showDetailView, setShowDetailView] = useState(false)
-  const [showArchived, setShowArchived] = useState(false)
+  const [showDetailView, setShowDetailView] = useState<boolean>(false)
+  const [showArchived, setShowArchived] = useState<boolean>(false)
+
+  // Функция для преобразования данных из API в правильный формат
+  const transformLessonsData = (data: unknown): Lesson[] => {
+    if (!data) return [];
+    
+    // Если это двумерный массив, объединяем его в одномерный
+    if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
+      return ([] as Lesson[]).concat(...data);
+    }
+    
+    // Если это уже одномерный массив
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    // Если это одиночный объект
+    return [data] as Lesson[];
+  };
 
   useEffect(() => {
-    const fetchLessons = () => {
-      apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
-        .then(response => {
-          if (response.success) {
-            setLessons(response.data)
+    const fetchLessons = async (): Promise<void> => {
+      try {
+        const response = await apiClient.getAll<Lesson[]>('lessons')
+        if (response.success && response.data) {
+          const lessonsData = transformLessonsData(response.data);
+          setLessons(lessonsData);
+        } else {
+          setLessons([])
+        }
+      } catch (error: unknown) {
+        console.error('Failed to fetch lessons:', error)
+        // Устанавливаем демо данные для разработки
+        setLessons([
+          {
+            _id: '1',
+            title: 'Beginner Riding Lesson',
+            description: '',
+            instructor: { _id: '1', first_name: 'Sarah', last_name: 'Johnson' },
+            horse: { _id: '1', name: 'Spirit', breed: 'Mustang' },
+            member: { _id: '2', first_name: 'Emma', last_name: 'Williams' },
+            scheduled_date: '2024-12-20T10:00:00Z',
+            duration_minutes: 60,
+            lesson_type: 'private',
+            status: 'scheduled',
+            cost: 85,
+            payment_status: 'pending'
+          },
+          {
+            _id: '2',
+            title: 'Advanced Dressage',
+            description: '',
+            instructor: { _id: '2', first_name: 'Michael', last_name: 'Chen' },
+            horse: { _id: '2', name: 'Thunder', breed: 'Thoroughbred' },
+            member: { _id: '3', first_name: 'Sophie', last_name: 'Davis' },
+            scheduled_date: '2024-12-20T14:00:00Z',
+            duration_minutes: 90,
+            lesson_type: 'private',
+            status: 'scheduled',
+            cost: 120,
+            payment_status: 'paid'
+          },
+          {
+            _id: '3',
+            title: 'Group Trail Ride',
+            description: '',
+            instructor: { _id: '1', first_name: 'Sarah', last_name: 'Johnson' },
+            horse: { _id: '3', name: 'Star', breed: 'Quarter Horse' },
+            member: { _id: '4', first_name: 'James', last_name: 'Brown' },
+            scheduled_date: '2024-12-21T09:00:00Z',
+            duration_minutes: 120,
+            lesson_type: 'group',
+            status: 'scheduled',
+            cost: 65,
+            payment_status: 'pending',
+            isActive: true
           }
-        })
-        .catch(error => {
-          console.error('Failed to fetch lessons:', error)
-          // Устанавливаем демо данные для разработки
-          setLessons([
-            {
-              _id: '1',
-              title: 'Beginner Riding Lesson',
-              instructor: { first_name: 'Sarah', last_name: 'Johnson' },
-              horse: { name: 'Spirit', breed: 'Mustang' },
-              member: { first_name: 'Emma', last_name: 'Williams' },
-              scheduled_date: '2024-12-20T10:00:00Z',
-              duration_minutes: 60,
-              lesson_type: 'private',
-              status: 'scheduled',
-              cost: 85,
-              payment_status: 'pending'
-            },
-            {
-              _id: '2',
-              title: 'Advanced Dressage',
-              instructor: { first_name: 'Michael', last_name: 'Chen' },
-              horse: { name: 'Thunder', breed: 'Thoroughbred' },
-              member: { first_name: 'Sophie', last_name: 'Davis' },
-              scheduled_date: '2024-12-20T14:00:00Z',
-              duration_minutes: 90,
-              lesson_type: 'private',
-              status: 'scheduled',
-              cost: 120,
-              payment_status: 'paid'
-            },
-            {
-              _id: '3',
-              title: 'Group Trail Ride',
-              instructor: { first_name: 'Sarah', last_name: 'Johnson' },
-              horse: { name: 'Star', breed: 'Quarter Horse' },
-              member: { first_name: 'James', last_name: 'Brown' },
-              scheduled_date: '2024-12-21T09:00:00Z',
-              duration_minutes: 120,
-              lesson_type: 'group',
-              status: 'scheduled',
-              cost: 65,
-              payment_status: 'pending',
-              isActive: true
-            }
-          ])
-        })
-        .finally(() => {
-          setLoading(false)
-        })
+        ])
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchLessons()
   }, [])
 
-  const handleAddSuccess = () => {
-    // Refresh the lessons list
-    const fetchLessons = () => {
-      apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
-        .then(response => {
-          if (response.success) {
-            setLessons(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch lessons:', error)
-        })
+  const handleAddSuccess = async (): Promise<void> => {
+    try {
+      const response = await apiClient.getAll<Lesson[]>('lessons')
+      if (response.success && response.data) {
+        const lessonsData = transformLessonsData(response.data);
+        setLessons(lessonsData);
+      }
+    } catch (error: unknown) {
+      console.error('Failed to fetch lessons:', error)
     }
-    fetchLessons()
   }
 
-  const handleEditLesson = (lesson: Lesson) => {
+  const handleEditLesson = (lesson: Lesson): void => {
     setEditingLesson(lesson)
     setShowEditForm(true)
   }
 
-  const handleEditSuccess = () => {
-    // Refresh the lessons list
-    const fetchLessons = () => {
-      apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
-        .then(response => {
-          if (response.success) {
-            setLessons(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch lessons:', error)
-        })
+  const handleEditSuccess = async (): Promise<void> => {
+    try {
+      const response = await apiClient.getAll<Lesson[]>('lessons')
+      if (response.success && response.data) {
+        const lessonsData = transformLessonsData(response.data);
+        setLessons(lessonsData);
+      }
+      setEditingLesson(null)
+    } catch (error: unknown) {
+      console.error('Failed to fetch lessons:', error)
     }
-    fetchLessons()
-    setEditingLesson(null)
   }
 
-  const handleCloseEditForm = () => {
+  const handleCloseEditForm = (): void => {
     setShowEditForm(false)
     setEditingLesson(null)
   }
 
-  const handleViewLesson = (lesson: Lesson) => {
+  const handleViewLesson = (lesson: Lesson): void => {
     setViewingLesson(lesson)
     setShowDetailView(true)
   }
 
-  const handleCloseDetailView = () => {
+  const handleCloseDetailView = (): void => {
     setShowDetailView(false)
     setViewingLesson(null)
   }
 
-  const handleDeleteLesson = async (lesson: Lesson) => {
+  const handleDeleteLesson = async (lesson: Lesson): Promise<void> => {
     if (window.confirm(`Вы уверены, что хотите удалить занятие "${lesson.title}"? Это действие нельзя отменить.`)) {
       try {
-        await apiClient.delete('lessons', lesson._id)
-        // Refresh the lessons list
-        const response = await apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
-        if (response.success) {
-          setLessons(response.data)
+        await apiClient.delete<Lesson>('lessons', lesson._id)
+        const response = await apiClient.getAll<Lesson[]>('lessons')
+        if (response.success && response.data) {
+          const lessonsData = transformLessonsData(response.data);
+          setLessons(lessonsData);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to delete lesson:', error)
         alert('Ошибка при удалении занятия')
       }
     }
   }
 
-  const handleArchiveLesson = async (lesson: Lesson) => {
+  const handleArchiveLesson = async (lesson: Lesson): Promise<void> => {
     if (window.confirm(`Вы уверены, что хотите ${lesson.isActive ? 'архивировать' : 'восстановить'} занятие "${lesson.title}"?`)) {
       try {
-        await apiClient.update('lessons', lesson._id, { isActive: !lesson.isActive })
-        // Refresh the lessons list
-        const response = await apiClient.getAll<{ success: boolean; data: Lesson[] }>('lessons')
-        if (response.success) {
-          setLessons(response.data)
+        await apiClient.update<Lesson>('lessons', lesson._id, { isActive: !lesson.isActive })
+        const response = await apiClient.getAll<Lesson[]>('lessons')
+        if (response.success && response.data) {
+          const lessonsData = transformLessonsData(response.data);
+          setLessons(lessonsData);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Failed to archive/restore lesson:', error)
         alert('Ошибка при архивировании/восстановлении занятия')
       }
@@ -195,7 +224,7 @@ const Lessons: React.FC = () => {
   )
     .filter(lesson => showArchived ? true : lesson.isActive !== false)
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: LessonStatus): string => {
     switch (status) {
       case 'scheduled': return 'bg-blue-100 text-blue-800'
       case 'completed': return 'bg-green-100 text-green-800'
@@ -205,7 +234,7 @@ const Lessons: React.FC = () => {
     }
   }
 
-  const getpayment_statusColor = (status: string) => {
+  const getPaymentStatusColor = (status: PaymentStatus): string => {
     switch (status) {
       case 'paid': return 'bg-green-100 text-green-800'
       case 'pending': return 'bg-yellow-100 text-yellow-800'
@@ -214,21 +243,20 @@ const Lessons: React.FC = () => {
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
+    return date.toLocaleDateString('ru-RU', {
       day: 'numeric',
+      month: 'short',
       year: 'numeric'
     })
   }
 
-  const formatTime = (dateString: string) => {
+  const formatTime = (dateString: string): string => {
     const date = new Date(dateString)
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+    return date.toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
@@ -362,14 +390,14 @@ const Lessons: React.FC = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lesson.status)}`}>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lesson.status as LessonStatus)}`}>
                       {lesson.status === 'scheduled' ? 'запланировано' : lesson.status === 'completed' ? 'завершено' : lesson.status === 'cancelled' ? 'отменено' : 'не явился'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{lesson.cost}₽</div>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getpayment_statusColor(lesson.payment_status)}`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(lesson.payment_status as PaymentStatus)}`}>
                         {lesson.payment_status === 'paid' ? 'оплачено' : lesson.payment_status === 'pending' ? 'ожидает' : 'просрочено'}
                       </span>
                     </div>

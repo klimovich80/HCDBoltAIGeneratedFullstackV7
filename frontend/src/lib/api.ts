@@ -1,5 +1,80 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+// Интерфейсы для типов данных
+interface User {
+  _id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Horse {
+  _id: string;
+  name: string;
+  breed: string;
+  age?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Lesson {
+  _id: string;
+  title: string;
+  description?: string;
+  instructor: User;
+  horse?: Horse;
+  member: User;
+  scheduled_date: string;
+  duration_minutes: number;
+  lesson_type: 'private' | 'group' | 'training';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+  cost: number;
+  payment_status: 'pending' | 'paid' | 'overdue';
+  notes?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Интерфейсы для ответов API
+interface AuthResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  message?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+interface LessonFormData {
+  title: string;
+  description?: string;
+  instructor_id: string;
+  horse_id?: string;
+  member_id: string;
+  scheduled_date: string;
+  duration_minutes: number;
+  lesson_type: 'private' | 'group' | 'training';
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+  cost: number;
+  payment_status: 'pending' | 'paid' | 'overdue';
+  notes?: string;
+}
+
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
@@ -21,7 +96,7 @@ class ApiClient {
   private request<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
     
     const config: RequestInit = {
@@ -51,51 +126,65 @@ class ApiClient {
   }
 
   // Методы аутентификации
-  login(email: string, password: string): Promise<any> {
-    return this.request<any>('/auth/login', {
+  login(email: string, password: string): Promise<AuthResponse> {
+    return this.request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
     .then(response => {
-      if (response.success && response.token) {
-        this.setToken(response.token);
+      // Здесь response имеет тип ApiResponse<AuthResponse>
+      if (response.success && response.data?.token) {
+        this.setToken(response.data.token);
       }
-      return response;
-    })
+      // Возвращаем данные аутентификации, а не весь ApiResponse
+      return {
+        success: response.success,
+        token: response.data?.token,
+        user: response.data?.user,
+        message: response.message
+      };
+    });
   }
     
-  register(userData: any): Promise<any> {
-    return this.request<any>('/auth/register', {
+  register(userData: Partial<User>): Promise<AuthResponse> {
+    return this.request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
     .then(response => {
-      if (response.success && response.token) {
-        this.setToken(response.token);
+      // Здесь response имеет тип ApiResponse<AuthResponse>
+      if (response.success && response.data?.token) {
+        this.setToken(response.data.token);
       }
-      return response;
-    })
+      // Возвращаем данные аутентификации, а не весь ApiResponse
+      return {
+        success: response.success,
+        token: response.data?.token,
+        user: response.data?.user,
+        message: response.message
+      };
+    });
   }
     
-  getCurrentUser(): Promise<any> {
-    return this.request<any>('/auth/me');
+  getCurrentUser(): Promise<ApiResponse<User>> {
+    return this.request<User>('/auth/me');
   }
 
-  logout() {
+  logout(): void {
     this.setToken(null);
   }
 
   // Универсальные CRUD методы
-  getAll<T>(resource: string, params?: Record<string, any>): Promise<T> {
-    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.request<T>(`/${resource}${queryString}`);
+  getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ApiResponse<T[]>> {
+    const queryString = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+    return this.request<T[]>(`/${resource}${queryString}`);
   }
 
-  getById<T>(resource: string, id: string): Promise<T> {
+  getById<T>(resource: string, id: string): Promise<ApiResponse<T>> {
     return this.request<T>(`/${resource}/${id}`);
   }
 
-  create<T>(resource: string, data: any): Promise<T> {
+  create<T>(resource: string, data: Partial<T>): Promise<ApiResponse<T>> {
     console.log('api.ts posting created: ', data ," to ", resource);
     return this.request<T>(`/${resource}`, {
       method: 'POST',
@@ -103,7 +192,7 @@ class ApiClient {
     });
   }
 
-  update<T>(resource: string, id: string,  any): Promise<T> {
+  update<T>(resource: string, id: string, data: Partial<T>): Promise<ApiResponse<T>> {
     console.log('api.ts posting updated: ', data ," to ", resource);
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
@@ -111,14 +200,14 @@ class ApiClient {
     });
   }
 
-  delete(resource: string, id: string): Promise<any> {
-    return this.request(`/${resource}/${id}`, {
+  delete<T>(resource: string, id: string): Promise<ApiResponse<T>> {
+    return this.request<T>(`/${resource}/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Специализированный метод для создания уроков
-  createLesson(lessonData: any): Promise<any> {
+  createLesson(lessonData: LessonFormData): Promise<ApiResponse<Lesson>> {
     console.log('api.ts creating lesson with ', lessonData);
     
     // Преобразование и коррекция даты
@@ -140,7 +229,7 @@ class ApiClient {
     }
 
     // Преобразование данных для соответствия серверной схеме
-    const transformedData = {
+    const transformedData: Record<string, unknown> = {
       title: lessonData.title,
       description: lessonData.description,
       instructor: lessonData.instructor_id,
@@ -156,26 +245,26 @@ class ApiClient {
 
     // Добавляем horse только если он указан
     if (lessonData.horse_id) {
-      (transformedData as any).horse = lessonData.horse_id;
+      transformedData.horse = lessonData.horse_id;
     }
 
-    console.log('Transformed lesson data:', transformedData);
+    console.log('Transformed lesson ', transformedData);
     
-    return this.request<any>('/lessons', {
+    return this.request<Lesson>('/lessons', {
       method: 'POST',
       body: JSON.stringify(transformedData),
     });
   }
 
   // Специализированный метод для обновления уроков
-  updateLesson(id: string, lessonData: any): Promise<any> {
+  updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ApiResponse<Lesson>> {
     console.log('api.ts updating lesson with ', lessonData);
     
     // Преобразование и коррекция даты
     let scheduledDate = lessonData.scheduled_date;
     
     // Если дата в формате datetime-local (YYYY-MM-DDTHH:mm), конвертируем в правильный ISO
-    if (scheduledDate && scheduledDate.length === 16) {
+    if (scheduledDate && scheduledDate && scheduledDate.length === 16) {
       // Добавляем секунды
       scheduledDate += ':00';
       // Конвертируем в объект Date и затем в ISO строку
@@ -190,7 +279,7 @@ class ApiClient {
     }
     
     // Преобразование данных для соответствия серверной схеме
-    const transformedData: any = {};
+    const transformedData: Record<string, unknown> = {};
     
     if (lessonData.title !== undefined) transformedData.title = lessonData.title;
     if (lessonData.description !== undefined) transformedData.description = lessonData.description;
@@ -207,7 +296,7 @@ class ApiClient {
 
     console.log('Transformed lesson update data:', transformedData);
     
-    return this.request<any>(`/lessons/${id}`, {
+    return this.request<Lesson>(`/lessons/${id}`, {
       method: 'PUT',
       body: JSON.stringify(transformedData),
     });
@@ -217,22 +306,22 @@ class ApiClient {
 export const apiClient = new ApiClient(API_BASE_URL);
 
 // Помощники аутентификации
-export const signIn = (email: string, password: string) => {
+export const signIn = (email: string, password: string): Promise<AuthResponse> => {
   return apiClient.login(email, password);
 };
 
-export const signUp = (userData: any) => {
+export const signUp = (userData: Partial<User>): Promise<AuthResponse> => {
   return apiClient.register(userData);
 };
 
-export const signOut = () => {
+export const signOut = (): void => {
   apiClient.logout();
   window.location.reload();
 };
 
-export const getCurrentUser = () => {
+export const getCurrentUser = (): Promise<User | null> => {
   return apiClient.getCurrentUser()
-    .then(response => response.user)
+    .then(response => response.data || null)
     .catch(error => {
       console.error('Failed to get current user:', error);
       return null;
