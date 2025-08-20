@@ -41,16 +41,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (token) {
         apiClient.setToken(token)
         try {
-          const response = await apiClient.getCurrentUser()
-          console.log('User data:', response)
-          if (response.success && response.token) {
-            setUser(response.token)
+          // Используем метод getCurrentUser из apiClient
+          const userData = await apiClient.getCurrentUser()
+          console.log('User data from init:', userData)
+          
+          if (userData) {
+            setUser(userData)
           } else {
             localStorage.removeItem('token')
+            apiClient.setToken(null)
           }
         } catch (error) {
           console.error('Failed to get user:', error)
           localStorage.removeItem('token')
+          apiClient.setToken(null)
         } finally {
           setLoading(false)
         }
@@ -62,24 +66,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initAuth()
   }, [])
 
-  const login = (email: string, password: string): Promise<void> => {
-    return apiClient.login(email, password)
-      .then(response => {
-        console.log('AuthContext successfull Login response:', response)
-        if (response.success && response.user) {
-          setUser(response.user)
+  const login = async (email: string, password: string): Promise<void> => {
+    try {
+      const response = await apiClient.login(email, password)
+      console.log('AuthContext login response:', response)
+      
+      if (response.success) {
+        // Правильное извлечение пользователя из ответа
+        const user = response.user || (response as any).data?.user
+        if (user) {
+          setUser(user)
         } else {
-          throw new Error(response.message || 'Login failed')
+          throw new Error('User data not found in response')
         }
-      })
-      .catch(error => {
-        console.error('Login error:', error)
-        throw error
-      })
+      } else {
+        throw new Error(response.message || 'Login failed')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
   }
 
   const logout = () => {
-    apiClient.logout()
+    apiClient.setToken(null)
+    localStorage.removeItem('token')
     setUser(null)
   }
 
