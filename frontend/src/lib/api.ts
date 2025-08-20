@@ -6,7 +6,11 @@ interface User {
   first_name: string;
   last_name: string;
   email: string;
+<<<<<<< HEAD
   role: 'admin' | 'trainer' | 'member' | 'guest';
+=======
+  role: string;
+>>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
   phone?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -131,8 +135,12 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
+<<<<<<< HEAD
       .then(response => {
       console.log('api.ts successfull login response: ', response);
+=======
+    .then(response => {
+>>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
       // Здесь response имеет тип ApiResponse<AuthResponse>
       if (response.success && response.data?.token) {
         this.setToken(response.data.token);
@@ -140,11 +148,17 @@ class ApiClient {
       // Возвращаем данные аутентификации, а не весь ApiResponse
       return {
         success: response.success,
+<<<<<<< HEAD
         //TODO:нужно исправить ошибки типизации APIresponse (отсутсвуют поля токена и юзера)
         token: response.token,
         user: response.user,
         message: response.message,
         response: response
+=======
+        token: response.data?.token,
+        user: response.data?.user,
+        message: response.message
+>>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
       };
     });
   }

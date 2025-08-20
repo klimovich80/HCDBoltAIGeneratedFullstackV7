@@ -16,9 +16,12 @@ const Login: React.FC = () => {
     setError('')
 
     login(email, password)
+<<<<<<< HEAD
       .then(() => {
         console.log('Login.tsx: Login successful')
       })
+=======
+>>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
       .catch(err => {
         setError('Invalid email or password: ' + err.message)
       })
