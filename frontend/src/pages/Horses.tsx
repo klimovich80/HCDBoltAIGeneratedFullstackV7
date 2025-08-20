@@ -43,63 +43,6 @@ const Horses: React.FC = () => {
         })
         .catch(error => {
           console.error('Failed to fetch horses:', error)
-          // Устанавливаем демо данные для разработки
-          setHorses([
-            {
-              _id: '1',
-              name: 'Thunder',
-              breed: 'Thoroughbred',
-              age: 8,
-              gender: 'gelding',
-              color: 'Bay',
-              profileImage: 'https://images.pexels.com/photos/1996333/pexels-photo-1996333.jpeg?auto=compress&cs=tinysrgb&w=400',
-              boardingType: 'full',
-              stallNumber: 'S01',
-              vaccinationStatus: 'current',
-              isActive: true,
-              owner: { first_name: 'Emma', last_name: 'Williams' }
-            },
-            {
-              _id: '2',
-              name: 'Moonlight',
-              breed: 'Arabian',
-              age: 12,
-              gender: 'mare',
-              color: 'Gray',
-              profileImage: 'https://images.pexels.com/photos/1996334/pexels-photo-1996334.jpeg?auto=compress&cs=tinysrgb&w=400',
-              boardingType: 'full',
-              stallNumber: 'S02',
-              vaccinationStatus: 'current',
-              isActive: true,
-              owner: { first_name: 'James', last_name: 'Brown' }
-            },
-            {
-              _id: '3',
-              name: 'Star',
-              breed: 'Quarter Horse',
-              age: 6,
-              gender: 'mare',
-              color: 'Chestnut',
-              boardingType: 'partial',
-              stallNumber: 'S03',
-              vaccinationStatus: 'due',
-              isActive: true,
-              owner: { first_name: 'Sophie', last_name: 'Davis' }
-            },
-            {
-              _id: '4',
-              name: 'Retired Champion',
-              breed: 'Warmblood',
-              age: 20,
-              gender: 'gelding',
-              color: 'Black',
-              boardingType: 'pasture',
-              stallNumber: '',
-              vaccinationStatus: 'current',
-              isActive: false,
-              owner: { first_name: 'Former', last_name: 'Owner' }
-            }
-          ])
         })
         .finally(() => {
           setLoading(false)

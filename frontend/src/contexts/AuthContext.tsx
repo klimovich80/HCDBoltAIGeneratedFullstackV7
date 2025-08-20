@@ -43,6 +43,7 @@ useEffect(() => {
       apiClient.setToken(token)
       try {
         const response = await apiClient.getCurrentUser()
+        console.log('Current user response:', response)
         if (response.success) {
           setUser(response.data || response.user || null)
         } else {

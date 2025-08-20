@@ -43,64 +43,6 @@ const Equipment: React.FC = () => {
         })
         .catch(error => {
           console.error('Failed to fetch equipment:', error)
-          // Устанавливаем демо данные для разработки
-          setEquipment([
-            {
-              _id: '1',
-              name: 'English All-Purpose Saddle',
-              category: 'saddle',
-              brand: 'Wintec',
-              condition: 'excellent',
-              assignedHorse: { name: 'Thunder', breed: 'Thoroughbred' },
-              cost: 850,
-              currentValue: 600,
-              location: 'Tack Room A'
-            },
-            {
-              _id: '2',
-              name: 'Dressage Bridle',
-              category: 'bridle',
-              brand: 'Stubben',
-              condition: 'good',
-              assignedHorse: { name: 'Thunder', breed: 'Thoroughbred' },
-              cost: 320,
-              currentValue: 250,
-              location: 'Tack Room A'
-            },
-            {
-              _id: '3',
-              name: 'Western Saddle',
-              category: 'saddle',
-              brand: 'Circle Y',
-              condition: 'good',
-              assignedHorse: { name: 'Blaze', breed: 'Paint Horse' },
-              cost: 1200,
-              currentValue: 900,
-              location: 'Tack Room B'
-            },
-            {
-              _id: '4',
-              name: 'Training Halter',
-              category: 'halter',
-              brand: 'Tough-1',
-              condition: 'excellent',
-              assignedHorse: { name: 'Spirit', breed: 'Mustang' },
-              cost: 35,
-              currentValue: 30,
-              location: 'Barn Aisle'
-            },
-            {
-              _id: '5',
-              name: 'Winter Blanket',
-              category: 'blanket',
-              brand: 'Rambo',
-              condition: 'fair',
-              assignedHorse: { name: 'Moonlight', breed: 'Arabian' },
-              cost: 180,
-              currentValue: 100,
-              location: 'Blanket Storage'
-            }
-          ])
         })
         .finally(() => {
           setLoading(false)

@@ -44,51 +44,6 @@ const Events: React.FC = () => {
         })
         .catch(error => {
           console.error('Failed to fetch events:', error)
-          // Устанавливаем демо данные для разработки
-          setEvents([
-            {
-              _id: '1',
-              title: 'Winter Dressage Competition',
-              description: 'Annual winter dressage competition for all levels',
-              eventType: 'competition',
-              startDate: '2024-12-28T08:00:00Z',
-              endDate: '2024-12-28T18:00:00Z',
-              location: 'Main Arena',
-              maxParticipants: 50,
-              registrationFee: 45,
-              organizer: { first_name: 'Sarah', last_name: 'Johnson' },
-              status: 'upcoming',
-              participants: new Array(32).fill(null)
-            },
-            {
-              _id: '2',
-              title: 'Jumping Clinic with Expert Trainer',
-              description: 'Two-day intensive jumping clinic',
-              eventType: 'clinic',
-              startDate: '2025-01-15T09:00:00Z',
-              endDate: '2025-01-16T17:00:00Z',
-              location: 'Outdoor Arena',
-              maxParticipants: 20,
-              registrationFee: 180,
-              organizer: { first_name: 'Michael', last_name: 'Chen' },
-              status: 'upcoming',
-              participants: new Array(15).fill(null)
-            },
-            {
-              _id: '3',
-              title: 'New Year Social Ride',
-              description: 'Celebratory group ride and BBQ',
-              eventType: 'social',
-              startDate: '2025-01-01T11:00:00Z',
-              endDate: '2025-01-01T16:00:00Z',
-              location: 'Trail System',
-              maxParticipants: 30,
-              registrationFee: 25,
-              organizer: { first_name: 'Sarah', last_name: 'Johnson' },
-              status: 'upcoming',
-              participants: new Array(22).fill(null)
-            }
-          ])
         })
         .finally(() => {
           setLoading(false)

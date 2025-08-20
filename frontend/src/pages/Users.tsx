@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Mail, Phone, Shield, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
+import { Search, Plus, Mail, Phone, Shield, Edit, Eye, Trash2, Archive, RotateCcw, Users as UsersIcon } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import UserForm from '../components/UserForm'
@@ -32,89 +32,19 @@ const Users: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
-    useEffect(() => {
-    const fetchUsers = () => {
-      apiClient.getAll<{ success: boolean; data: User[] }>('users')
-        .then(response => {
-          if (response.success) {
-            setUsers(response.data)
-            return
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch users:', error)
-          // Устанавливаем демо данные для разработки
-          setUsers([
-            {
-              _id: '1',
-              first_name: 'Admin',
-              last_name: 'User',
-              email: 'admin@equestrian.com',
-              phone: '+1-555-0001',
-              role: 'admin',
-              emergencyContactName: 'Emergency Contact',
-              emergencyContactPhone: '+1-555-9999',
-              createdAt: '2024-01-01T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '2',
-              first_name: 'Sarah',
-              last_name: 'Johnson',
-              email: 'sarah.trainer@equestrian.com',
-              phone: '+1-555-0002',
-              role: 'trainer',
-              emergencyContactName: 'Mike Johnson',
-              emergencyContactPhone: '+1-555-9998',
-              createdAt: '2024-01-15T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '3',
-              first_name: 'Michael',
-              last_name: 'Chen',
-              email: 'michael.trainer@equestrian.com',
-              phone: '+1-555-0003',
-              role: 'trainer',
-              emergencyContactName: 'Lisa Chen',
-              emergencyContactPhone: '+1-555-9997',
-              createdAt: '2024-02-01T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '4',
-              first_name: 'Emma',
-              last_name: 'Williams',
-              email: 'emma@email.com',
-              phone: '+1-555-0004',
-              role: 'member',
-              membershipTier: 'premium',
-              emergencyContactName: 'David Williams',
-              emergencyContactPhone: '+1-555-9996',
-              createdAt: '2024-03-01T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '5',
-              first_name: 'James',
-              last_name: 'Brown',
-              email: 'james@email.com',
-              phone: '+1-555-0005',
-              role: 'member',
-              membershipTier: 'basic',
-              emergencyContactName: 'Mary Brown',
-              emergencyContactPhone: '+1-555-9995',
-              createdAt: '2024-03-15T00:00:00Z',
-              isActive: true
-            }
-          ])
-        })
-        .finally(() => {
-          setLoading(false)
-        })
+  const fetchUsers = async () => {
+    try {
+      const response = await apiClient.getAll<User[]>('users')
+      if (response.success) {
+        setUsers(response.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
     }
+  }
 
-    fetchUsers()
+  useEffect(() => {
+    fetchUsers().finally(() => setLoading(false))
   }, [])
 
   // Разрешить доступ только администраторам и тренерам
@@ -131,19 +61,8 @@ const Users: React.FC = () => {
   }
 
   const handleAddSuccess = () => {
-    // Refresh the users list
-    const fetchUsers = () => {
-      apiClient.getAll<{ success: boolean; data: User[] }>('users')
-        .then(response => {
-          if (response.success) {
-            setUsers(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch users:', error)
-        })
-    }
     fetchUsers()
+    setShowAddForm(false)
   }
 
   const handleEditUser = (user: User) => {
@@ -152,19 +71,8 @@ const Users: React.FC = () => {
   }
 
   const handleEditSuccess = () => {
-    // Refresh the users list
-    const fetchUsers = () => {
-      apiClient.getAll<{ success: boolean; data: User[] }>('users')
-        .then(response => {
-          if (response.success) {
-            setUsers(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch users:', error)
-        })
-    }
     fetchUsers()
+    setShowEditForm(false)
     setEditingUser(null)
   }
 
@@ -186,11 +94,11 @@ const Users: React.FC = () => {
   const handleDeleteUser = async (user: User) => {
     if (window.confirm(`Вы уверены, что хотите удалить пользователя "${user.first_name} ${user.last_name}"? Это действие нельзя отменить.`)) {
       try {
-        await apiClient.delete('users', user._id)
-        // Refresh the users list
-        const response = await apiClient.getAll<{ success: boolean; data: User[] }>('users')
+        const response = await apiClient.delete('users', user._id)
         if (response.success) {
-          setUsers(response.data)
+          await fetchUsers()
+        } else {
+          alert(response.message || 'Ошибка при удалении пользователя')
         }
       } catch (error) {
         console.error('Failed to delete user:', error)
@@ -202,8 +110,12 @@ const Users: React.FC = () => {
   const handleArchiveUser = async (user: User) => {
     if (window.confirm(`Вы уверены, что хотите ${user.isActive ? 'архивировать' : 'восстановить'} пользователя "${user.first_name} ${user.last_name}"?`)) {
       try {
-        await apiClient.update('users', user._id, { isActive: !user.isActive })
-        handleAddSuccess() // Refresh the list
+        const response = await apiClient.update('users', user._id, { isActive: !user.isActive })
+        if (response.success) {
+          await fetchUsers()
+        } else {
+          alert(response.message || 'Ошибка при обновлении пользователя')
+        }
       } catch (error) {
         console.error('Failed to archive/restore user:', error)
         alert('Ошибка при архивировании/восстановлении пользователя')
@@ -238,9 +150,9 @@ const Users: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric'
     })
   }
@@ -253,8 +165,29 @@ const Users: React.FC = () => {
     )
   }
 
+  if (users.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900">Пользователи не найдены</h3>
+          <p className="text-gray-600">Начните с добавления первого пользователя.</p>
+          {currentUser.role === 'admin' && (
+            <button 
+              className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2 mx-auto"
+              onClick={() => setShowAddForm(true)}
+            >
+              <Plus className="h-4 w-4" />
+              <span>Добавить пользователя</span>
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+   <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Пользователи</h1>
@@ -456,6 +389,7 @@ const Users: React.FC = () => {
         user={viewingUser}
       />
     </div>
+
   )
 }
 
