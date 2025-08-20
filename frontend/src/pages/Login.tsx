@@ -9,21 +9,43 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const isValid = emailRegex.test(email)
+    setEmailError(isValid ? '' : 'Некорректный формат email')
+    return isValid
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmail(value)
+    if (value) {
+      validateEmail(value)
+    } else {
+      setEmailError('')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateEmail(email)) {
+      return
+    }
+    
     setLoading(true)
     setError('')
 
     try {
       await login(email, password)
-      // Перенаправление после успешного входа
       navigate('/dashboard')
-    } catch (err: any) {
+    } catch (err) {
       console.error('Login error:', err)
-      setError(err.message || 'Неверный email или пароль')
+      setError(err instanceof Error ? err.message : 'Неверный email или пароль')
     } finally {
       setLoading(false)
     }
@@ -56,11 +78,19 @@ const Login: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:z-10 sm:text-sm ${
+                  emailError 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                }`}
                 placeholder="Адрес электронной почты"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                disabled={loading}
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
             <div className="relative">
               <label htmlFor="password" className="sr-only">
@@ -76,12 +106,15 @@ const Login: React.FC = () => {
                 placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                aria-pressed={showPassword}
+                disabled={loading}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -93,13 +126,15 @@ const Login: React.FC = () => {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
+            <div className="text-red-600 text-sm text-center p-2 bg-red-50 rounded-md border border-red-100">
+              {error}
+            </div>
           )}
 
           <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !!emailError}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {loading ? (
