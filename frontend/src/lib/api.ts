@@ -6,11 +6,7 @@ interface User {
   first_name: string;
   last_name: string;
   email: string;
-<<<<<<< HEAD
   role: 'admin' | 'trainer' | 'member' | 'guest';
-=======
-  role: string;
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
   phone?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -52,7 +48,7 @@ interface AuthResponse {
   message?: string;
 }
 
-interface ApiResponse<T> {
+interface ServerResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
@@ -62,6 +58,8 @@ interface ApiResponse<T> {
     total: number;
     pages: number;
   };
+  token?: string;
+  user?: User;
 }
 
 interface LessonFormData {
@@ -97,11 +95,14 @@ class ApiClient {
     }
   }
 
-  private request<T>(
+  private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+    options: RequestInit = {},
+    timeout = 8000
+  ): Promise<ServerResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
     
     const config: RequestInit = {
       headers: {
@@ -109,82 +110,130 @@ class ApiClient {
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
         ...options.headers,
       },
+      signal: controller.signal,
       ...options,
     };
 
-    return fetch(url, config)
-      .then(response => {
-        if (!response.ok) {
-          return response.json()
-            .catch(() => ({}))
-            .then(errorData => {
-              throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-            })
+    try {
+      const response = await fetch(url, config);
+      clearTimeout(id);
+      
+      if (!response.ok) {
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          throw new Error(`HTTP ошибка! статус: ${response.status} - ${response.statusText}`);
         }
-        return response.json()
-      })
-      .catch(error => {
-        console.error('API request failed:', error)
-        throw error
-      })
+        throw new Error(errorData.message || `HTTP ошибка! статус: ${response.status}`);
+      }
+      
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+      
+      // Гарантируем, что возвращаем объект с правильной структурой
+      return {
+        success: data.success !== undefined ? data.success : true,
+        data: data.data !== undefined ? data.data : data,
+        message: data.message,
+        pagination: data.pagination,
+        token: data.token,
+        user: data.user
+      };
+    } catch (error) {
+      clearTimeout(id);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Превышено время ожидания запроса');
+      }
+      console.error('Ошибка API запроса:', error);
+      throw error;
+    }
   }
 
   // Методы аутентификации
-  login(email: string, password: string): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
-<<<<<<< HEAD
-      .then(response => {
-      console.log('api.ts successfull login response: ', response);
-=======
-    .then(response => {
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-      // Здесь response имеет тип ApiResponse<AuthResponse>
-      if (response.success && response.data?.token) {
-        this.setToken(response.data.token);
+  async login(email: string, password: string): Promise<AuthResponse> {
+    try {
+      const response = await this.request<AuthResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      
+      // Обрабатываем разные форматы ответов сервера
+      if (response.success) {
+        const token = response.token || (response.data as any)?.token;
+        const user = response.user || (response.data as any)?.user;
+        
+        if (token) {
+          this.setToken(token);
+          return {
+            success: true,
+            token,
+            user,
+            message: response.message
+          };
+        }
       }
-      // Возвращаем данные аутентификации, а не весь ApiResponse
+      
       return {
-        success: response.success,
-<<<<<<< HEAD
-        //TODO:нужно исправить ошибки типизации APIresponse (отсутсвуют поля токена и юзера)
-        token: response.token,
-        user: response.user,
-        message: response.message,
-        response: response
-=======
-        token: response.data?.token,
-        user: response.data?.user,
-        message: response.message
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
+        success: false,
+        message: response.message || 'Ошибка входа'
       };
-    });
+    } catch (error) {
+      console.error('Ошибка входа:', error);
+      return {
+        success: false,
+        message: (error as Error).message || 'Ошибка входа'
+      };
+    }
   }
     
-  register(userData: Partial<User>): Promise<AuthResponse> {
-    return this.request<AuthResponse>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    })
-    .then(response => {
-      // Здесь response имеет тип ApiResponse<AuthResponse>
-      if (response.success && response.data?.token) {
-        this.setToken(response.data.token);
+  async register(userData: Partial<User>): Promise<AuthResponse> {
+    try {
+      const response = await this.request<AuthResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+      
+      if (response.success) {
+        const token = response.token || (response.data as any)?.token;
+        const user = response.user || (response.data as any)?.user;
+        
+        if (token) {
+          this.setToken(token);
+          return {
+            success: true,
+            token,
+            user,
+            message: response.message
+          };
+        }
       }
-      // Возвращаем данные аутентификации, а не весь ApiResponse
+      
       return {
-        success: response.success,
-        token: response.data?.token,
-        user: response.data?.user,
-        message: response.message
+        success: false,
+        message: response.message || 'Ошибка регистрации'
       };
-    });
+    } catch (error) {
+      console.error('Ошибка регистрации:', error);
+      return {
+        success: false,
+        message: (error as Error).message || 'Ошибка регистрации'
+      };
+    }
   }
     
-  getCurrentUser(): Promise<ApiResponse<User>> {
-    return this.request<User>('/auth/me');
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      const response = await this.request<User>('/auth/me');
+      
+      if (response.success) {
+        return response.data || response.user || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Ошибка получения текущего пользователя:', error);
+      return null;
+    }
   }
 
   logout(): void {
@@ -192,61 +241,61 @@ class ApiClient {
   }
 
   // Универсальные CRUD методы
-  getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ApiResponse<T[]>> {
+  getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ServerResponse<T[]>> {
     const queryString = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
-  getById<T>(resource: string, id: string): Promise<ApiResponse<T>> {
+  getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`);
   }
 
-  create<T>(resource: string, data: Partial<T>): Promise<ApiResponse<T>> {
-    console.log('api.ts posting created: ', data ," to ", resource);
+  create<T>(resource: string, data: Partial<T>): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  update<T>(resource: string, id: string, data: Partial<T>): Promise<ApiResponse<T>> {
-    console.log('api.ts posting updated: ', data ," to ", resource);
+  update<T>(resource: string, id: string, data: Partial<T>): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  delete<T>(resource: string, id: string): Promise<ApiResponse<T>> {
+  delete<T>(resource: string, id: string): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`, {
       method: 'DELETE',
     });
   }
 
   // Специализированный метод для создания уроков
-  createLesson(lessonData: LessonFormData): Promise<ApiResponse<Lesson>> {
-    console.log('api.ts creating lesson with ', lessonData);
-    
-    // Преобразование и коррекция даты
+  async createLesson(lessonData: LessonFormData): Promise<ServerResponse<Lesson>> {
     let scheduledDate = lessonData.scheduled_date;
     
-    // Если дата в формате datetime-local (YYYY-MM-DDTHH:mm), конвертируем в правильный ISO
-    if (scheduledDate && scheduledDate.length === 16) {
-      // Добавляем секунды
-      scheduledDate += ':00';
-      // Конвертируем в объект Date и затем в ISO строку
-      const dateObj = new Date(scheduledDate);
-      scheduledDate = dateObj.toISOString();
-    } else if (scheduledDate && !scheduledDate.includes('T')) {
-      // Если дата в другом формате, пытаемся сконвертировать
-      const dateObj = new Date(scheduledDate);
-      if (!isNaN(dateObj.getTime())) {
-        scheduledDate = dateObj.toISOString();
+    // Преобразование даты в правильный формат
+    if (scheduledDate) {
+      try {
+        // Если дата в формате без времени, добавляем время
+        if (scheduledDate.length === 10) {
+          scheduledDate += 'T00:00:00';
+        }
+        // Если дата в формате datetime-local (YYYY-MM-DDTHH:mm), добавляем секунды
+        else if (scheduledDate.length === 16) {
+          scheduledDate += ':00';
+        }
+        
+        const dateObj = new Date(scheduledDate);
+        if (!isNaN(dateObj.getTime())) {
+          scheduledDate = dateObj.toISOString();
+        }
+      } catch (error) {
+        console.warn('Ошибка преобразования даты:', error);
       }
     }
 
-    // Преобразование данных для соответствия серверной схеме
-    const transformedData: Record<string, unknown> = {
+    const transformedData = {
       title: lessonData.title,
       description: lessonData.description,
       instructor: lessonData.instructor_id,
@@ -257,15 +306,9 @@ class ApiClient {
       cost: lessonData.cost,
       status: lessonData.status,
       payment_status: lessonData.payment_status,
-      notes: lessonData.notes
+      notes: lessonData.notes,
+      ...(lessonData.horse_id && { horse: lessonData.horse_id })
     };
-
-    // Добавляем horse только если он указан
-    if (lessonData.horse_id) {
-      transformedData.horse = lessonData.horse_id;
-    }
-
-    console.log('Transformed lesson ', transformedData);
     
     return this.request<Lesson>('/lessons', {
       method: 'POST',
@@ -274,28 +317,28 @@ class ApiClient {
   }
 
   // Специализированный метод для обновления уроков
-  updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ApiResponse<Lesson>> {
-    console.log('api.ts updating lesson with ', lessonData);
-    
-    // Преобразование и коррекция даты
+  async updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ServerResponse<Lesson>> {
     let scheduledDate = lessonData.scheduled_date;
     
-    // Если дата в формате datetime-local (YYYY-MM-DDTHH:mm), конвертируем в правильный ISO
-    if (scheduledDate && scheduledDate && scheduledDate.length === 16) {
-      // Добавляем секунды
-      scheduledDate += ':00';
-      // Конвертируем в объект Date и затем в ISO строку
-      const dateObj = new Date(scheduledDate);
-      scheduledDate = dateObj.toISOString();
-    } else if (scheduledDate && !scheduledDate.includes('T')) {
-      // Если дата в другом формате, пытаемся сконвертировать
-      const dateObj = new Date(scheduledDate);
-      if (!isNaN(dateObj.getTime())) {
-        scheduledDate = dateObj.toISOString();
+    // Преобразование даты в правильный формат
+    if (scheduledDate) {
+      try {
+        if (scheduledDate.length === 10) {
+          scheduledDate += 'T00:00:00';
+        }
+        else if (scheduledDate.length === 16) {
+          scheduledDate += ':00';
+        }
+        
+        const dateObj = new Date(scheduledDate);
+        if (!isNaN(dateObj.getTime())) {
+          scheduledDate = dateObj.toISOString();
+        }
+      } catch (error) {
+        console.warn('Ошибка преобразования даты:', error);
       }
     }
     
-    // Преобразование данных для соответствия серверной схеме
     const transformedData: Record<string, unknown> = {};
     
     if (lessonData.title !== undefined) transformedData.title = lessonData.title;
@@ -310,8 +353,6 @@ class ApiClient {
     if (lessonData.payment_status !== undefined) transformedData.payment_status = lessonData.payment_status;
     if (lessonData.notes !== undefined) transformedData.notes = lessonData.notes;
     if (lessonData.horse_id !== undefined) transformedData.horse = lessonData.horse_id;
-
-    console.log('Transformed lesson update data:', transformedData);
     
     return this.request<Lesson>(`/lessons/${id}`, {
       method: 'PUT',
@@ -337,10 +378,5 @@ export const signOut = (): void => {
 };
 
 export const getCurrentUser = (): Promise<User | null> => {
-  return apiClient.getCurrentUser()
-    .then(response => response.data || null)
-    .catch(error => {
-      console.error('Failed to get current user:', error);
-      return null;
-    })
+  return apiClient.getCurrentUser();
 };

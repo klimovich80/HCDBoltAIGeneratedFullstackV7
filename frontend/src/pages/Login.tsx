@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Users as Horse, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -9,25 +10,24 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    login(email, password)
-<<<<<<< HEAD
-      .then(() => {
-        console.log('Login.tsx: Login successful')
-      })
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-      .catch(err => {
-        setError('Invalid email or password: ' + err.message)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    try {
+      await login(email, password)
+      console.log('Login.tsx: Login successful')
+      // Перенаправление после успешного входа
+      navigate('/dashboard')
+    } catch (err: any) {
+      console.error('Login error:', err)
+      setError(err.message || 'Неверный email или пароль')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -82,6 +82,7 @@ const Login: React.FC = () => {
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -93,25 +94,33 @@ const Login: React.FC = () => {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">Неверный email или пароль</div>
+            <div className="text-red-600 text-sm text-center">{error}</div>
           )}
 
           <div>
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Вход...
+                </span>
+              ) : 'Войти'}
             </button>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Демо данные:</h3>
-            <p className="text-xs text-blue-700">
-              Email: <strong>admin@example.com</strong><br />
-              Пароль: <strong>password123</strong>
-            </p>
+            <div className="text-xs text-blue-700 space-y-1">
+              <p>Email: <strong>admin@example.com</strong></p>
+              <p>Пароль: <strong>password123</strong></p>
+            </div>
           </div>
         </form>
       </div>

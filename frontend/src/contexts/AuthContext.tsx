@@ -2,11 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiClient } from '../lib/api'
 
 interface User {
-<<<<<<< HEAD
   _id: string
-=======
-  id: string
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
   first_name: string
   last_name: string
   email: string
@@ -40,25 +36,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const token = localStorage.getItem('token')
       if (token) {
         apiClient.setToken(token)
-        apiClient.getCurrentUser()
-          .then(userData => {
-<<<<<<< HEAD
-            console.log('User data:', userData)
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-            setUser(userData)
-          })
-          .catch(error => {
-            console.error('Failed to get user:', error)
+        try {
+          const response = await apiClient.getCurrentUser()
+          console.log('User data:', response)
+          if (response.success && response.token) {
+            setUser(response.token)
+          } else {
             localStorage.removeItem('token')
-          })
-          .finally(() => {
-            setLoading(false)
-          })
+          }
+        } catch (error) {
+          console.error('Failed to get user:', error)
+          localStorage.removeItem('token')
+        } finally {
+          setLoading(false)
+        }
       } else {
         setLoading(false)
       }
@@ -70,10 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (email: string, password: string): Promise<void> => {
     return apiClient.login(email, password)
       .then(response => {
-<<<<<<< HEAD
         console.log('AuthContext successfull Login response:', response)
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
         if (response.success && response.user) {
           setUser(response.user)
         } else {

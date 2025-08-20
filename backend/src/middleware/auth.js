@@ -6,7 +6,7 @@ const logger = require('../config/logger');
 const auth = (req, res, next) => {
   const handleAuth = () => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       res.status(401).json({ message: 'Нет токена, доступ запрещен' });
       return;
@@ -14,9 +14,10 @@ const auth = (req, res, next) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-      
+
       User.findById(decoded.userId).select('-password')
         .then(user => {
+          console.log('User in auth.js middleware:', user);
           if (!user) {
             res.status(401).json({ message: 'Токен недействителен' });
             return;
@@ -51,8 +52,8 @@ const authorize = (...roles) => {
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: `Роль ${req.user.role} не имеет доступа к этому ресурсу` 
+      return res.status(403).json({
+        message: `Роль ${req.user.role} не имеет доступа к этому ресурсу`
       });
     }
 
