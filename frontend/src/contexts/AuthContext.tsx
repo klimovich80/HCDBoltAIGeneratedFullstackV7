@@ -43,7 +43,6 @@ useEffect(() => {
       apiClient.setToken(token)
       try {
         const response = await apiClient.getCurrentUser()
-        console.log('User data:', response)
         if (response.success) {
           setUser(response.data || response.user || null)
         } else {
@@ -68,7 +67,6 @@ useEffect(() => {
   const login = async (email: string, password: string): Promise<void> => {
     try {
       const response = await apiClient.login(email, password)
-      console.log('AuthContext login response:', response)
       
       if (response.success) {
         // Правильное извлечение пользователя из ответа

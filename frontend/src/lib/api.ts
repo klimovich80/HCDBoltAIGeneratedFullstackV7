@@ -48,16 +48,18 @@ interface AuthResponse {
   message?: string;
 }
 
-interface ServerResponse<T = any> {
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+interface ServerResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  pagination?: Pagination;
   token?: string;
   user?: User;
 }
@@ -119,10 +121,11 @@ class ApiClient {
       clearTimeout(id);
       
       if (!response.ok) {
-        let errorData: any = {};
+        let errorData: { message?: string } = {};
         try {
           errorData = await response.json();
         } catch (e) {
+          console.warn('Ошибка парсинга JSON:', e);
           throw new Error(`HTTP ошибка! статус: ${response.status} - ${response.statusText}`);
         }
         throw new Error(errorData.message || `HTTP ошибка! статус: ${response.status}`);
@@ -157,9 +160,16 @@ class ApiClient {
         body: JSON.stringify({ email, password }),
       });
       
+      // Создаем интерфейс для данных ответа
+      interface LoginResponseData {
+        token?: string;
+        user?: User;
+      }
+      
       if (response.success) {
-        const token = response.token || (response.data as any)?.token;
-        const user = response.user || (response.data as any)?.user;
+        const responseData = response.data as LoginResponseData;
+        const token = response.token || responseData?.token;
+        const user = response.user || responseData?.user;
         
         if (token) {
           this.setToken(token);
@@ -192,9 +202,16 @@ class ApiClient {
         body: JSON.stringify(userData),
       });
       
+      // Создаем интерфейс для данных ответа
+      interface RegisterResponseData {
+        token?: string;
+        user?: User;
+      }
+      
       if (response.success) {
-        const token = response.token || (response.data as any)?.token;
-        const user = response.user || (response.data as any)?.user;
+        const responseData = response.data as RegisterResponseData;
+        const token = response.token || responseData?.token;
+        const user = response.user || responseData?.user;
         
         if (token) {
           this.setToken(token);
@@ -220,18 +237,20 @@ class ApiClient {
     }
   }
     
-  async getCurrentUser(): Promise<ServerResponse<User>> {
-    try {
-      const response = await this.request<User>('/auth/me');
-      return response;
-    } catch (error) {
-      console.error('Ошибка получения текущего пользователя:', error);
-      return {
-        success: false,
-        message: (error as Error).message || 'Ошибка получения пользователя'
-      };
+  async getCurrentUser(): Promise<User | null> {
+  try {
+    const response = await this.request<User>('/auth/me');
+    
+    if (response.success) {
+      // Возвращаем непосредственно пользователя, а не весь response
+      return response.data || response.user || null;
     }
+    return null;
+  } catch (error) {
+    console.error('Ошибка получения текущего пользователя:', error);
+    return null;
   }
+}
 
   logout(): void {
     this.setToken(null);

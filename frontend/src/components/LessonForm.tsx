@@ -216,8 +216,6 @@ const handleSubmit = async (e: React.FormEvent): Promise<void> => {
   setError('')
 
   try {
-    console.log('Отправка данных формы:', formData)
-
     // Проверка обязательных полей
     if (!formData.title.trim()) {
       throw new Error('Название урока обязательно')

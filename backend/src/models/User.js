@@ -75,7 +75,6 @@ userSchema.pre('save', async function (next) {
     // Hash the password with the generated salt
     this.password = await bcrypt.hash(this.password, salt);
 
-    console.log(`Password hashed for user: ${this.email}`);
     next();
   } catch (error) {
     console.error('Error hashing password:', error);

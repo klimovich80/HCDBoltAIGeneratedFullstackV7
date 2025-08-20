@@ -19,7 +19,6 @@ const Login: React.FC = () => {
 
     try {
       await login(email, password)
-      console.log('Login.tsx: Login successful')
       // Перенаправление после успешного входа
       navigate('/dashboard')
     } catch (err: any) {

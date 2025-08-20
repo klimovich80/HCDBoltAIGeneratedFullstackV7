@@ -17,7 +17,6 @@ const auth = (req, res, next) => {
 
       User.findById(decoded.userId).select('-password')
         .then(user => {
-          console.log('User in auth.js middleware:', user);
           if (!user) {
             res.status(401).json({ message: 'Токен недействителен' });
             return;
