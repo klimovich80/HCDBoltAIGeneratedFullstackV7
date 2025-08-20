@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { apiClient } from '../lib/api'
 
 interface User {
-  id: string
-  firstName: string
-  lastName: string
+  _id: string
+  first_name: string
+  last_name: string
   email: string
   role: 'admin' | 'trainer' | 'member' | 'guest'
+  profileImage?: string
 }
 
 interface AuthContextType {
@@ -41,6 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         apiClient.setToken(token)
         apiClient.getCurrentUser()
           .then(userData => {
+            console.log('User data:', userData)
             setUser(userData)
           })
           .catch(error => {
@@ -61,6 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (email: string, password: string): Promise<void> => {
     return apiClient.login(email, password)
       .then(response => {
+        console.log('AuthContext successfull Login response:', response)
         if (response.success && response.user) {
           setUser(response.user)
         } else {
