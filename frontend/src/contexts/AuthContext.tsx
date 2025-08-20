@@ -35,36 +35,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        apiClient.setToken(token)
-        try {
-          // Используем метод getCurrentUser из apiClient
-          const userData = await apiClient.getCurrentUser()
-          console.log('User data from init:', userData)
-          
-          if (userData) {
-            setUser(userData)
-          } else {
-            localStorage.removeItem('token')
-            apiClient.setToken(null)
-          }
-        } catch (error) {
-          console.error('Failed to get user:', error)
+ // В AuthProvider
+useEffect(() => {
+  const initAuth = async () => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      apiClient.setToken(token)
+      try {
+        const response = await apiClient.getCurrentUser()
+        console.log('User data:', response)
+        if (response.success) {
+          setUser(response.data || response.user || null)
+        } else {
           localStorage.removeItem('token')
           apiClient.setToken(null)
-        } finally {
-          setLoading(false)
         }
-      } else {
+      } catch (error) {
+        console.error('Failed to get user:', error)
+        localStorage.removeItem('token')
+        apiClient.setToken(null)
+      } finally {
         setLoading(false)
       }
+    } else {
+      setLoading(false)
     }
+  }
 
-    initAuth()
-  }, [])
+  initAuth()
+}, [])
 
   const login = async (email: string, password: string): Promise<void> => {
     try {

@@ -131,7 +131,6 @@ class ApiClient {
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
       
-      // Гарантируем, что возвращаем объект с правильной структурой
       return {
         success: data.success !== undefined ? data.success : true,
         data: data.data !== undefined ? data.data : data,
@@ -158,7 +157,6 @@ class ApiClient {
         body: JSON.stringify({ email, password }),
       });
       
-      // Обрабатываем разные форматы ответов сервера
       if (response.success) {
         const token = response.token || (response.data as any)?.token;
         const user = response.user || (response.data as any)?.user;
@@ -222,17 +220,16 @@ class ApiClient {
     }
   }
     
-  async getCurrentUser(): Promise<User | null> {
+  async getCurrentUser(): Promise<ServerResponse<User>> {
     try {
       const response = await this.request<User>('/auth/me');
-      
-      if (response.success) {
-        return response.data || response.user || null;
-      }
-      return null;
+      return response;
     } catch (error) {
       console.error('Ошибка получения текущего пользователя:', error);
-      return null;
+      return {
+        success: false,
+        message: (error as Error).message || 'Ошибка получения пользователя'
+      };
     }
   }
 
@@ -274,14 +271,11 @@ class ApiClient {
   async createLesson(lessonData: LessonFormData): Promise<ServerResponse<Lesson>> {
     let scheduledDate = lessonData.scheduled_date;
     
-    // Преобразование даты в правильный формат
     if (scheduledDate) {
       try {
-        // Если дата в формате без времени, добавляем время
         if (scheduledDate.length === 10) {
           scheduledDate += 'T00:00:00';
         }
-        // Если дата в формате datetime-local (YYYY-MM-DDTHH:mm), добавляем секунды
         else if (scheduledDate.length === 16) {
           scheduledDate += ':00';
         }
@@ -320,7 +314,6 @@ class ApiClient {
   async updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ServerResponse<Lesson>> {
     let scheduledDate = lessonData.scheduled_date;
     
-    // Преобразование даты в правильный формат
     if (scheduledDate) {
       try {
         if (scheduledDate.length === 10) {
