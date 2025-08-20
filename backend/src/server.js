@@ -55,7 +55,7 @@ app.use('/api/payments', require('./routes/payments'));
 
 // Обработка ошибок 404
 app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Маршрут не найден' });
+  res.status(404).json({ message: 'server.js Маршрут не найден' });
 });
 
 // Глобальный обработчик ошибок

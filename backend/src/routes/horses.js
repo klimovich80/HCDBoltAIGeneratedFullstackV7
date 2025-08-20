@@ -9,37 +9,37 @@ const router = express.Router();
 router.get('/', auth, (req, res) => {
   const handleGetHorses = () => {
     const { page = 1, limit = 10, breed, boardingType, owner } = req.query;
-    
+
     let query = {};
-    
+
     if (breed) query.breed = new RegExp(breed, 'i');
     if (boardingType) query.boardingType = boardingType;
     if (owner) query.owner = owner;
 
     Promise.all([
       Horse.find(query)
-        .populate('owner', 'firstName lastName email')
+        .populate('owner', 'first_name last_name email')
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ name: 1 }),
       Horse.countDocuments(query)
     ])
-    .then(([horses, total]) => {
-      res.json({
-        success: true,
-        data: horses,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
+      .then(([horses, total]) => {
+        res.json({
+          success: true,
+          data: horses,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        });
+      })
+      .catch(error => {
+        logger.error('Ошибка получения лошадей:', error);
+        res.status(500).json({ message: 'Ошибка сервера' });
       });
-    })
-    .catch(error => {
-      logger.error('Ошибка получения лошадей:', error);
-      res.status(500).json({ message: 'Ошибка сервера' });
-    });
   };
 
   handleGetHorses();
@@ -49,8 +49,8 @@ router.get('/', auth, (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const horse = await Horse.findById(req.params.id)
-      .populate('owner', 'firstName lastName email phone');
-    
+      .populate('owner', 'first_name last_name email phone');
+
     if (!horse) {
       return res.status(404).json({ message: 'Лошадь не найдена' });
     }
@@ -71,7 +71,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
     const horse = new Horse(req.body);
     await horse.save();
 
-    await horse.populate('owner', 'firstName lastName email');
+    await horse.populate('owner', 'first_name last_name email');
 
     logger.info(`Создана новая лошадь: ${horse.name}`);
 
@@ -89,7 +89,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const horse = await Horse.findById(req.params.id);
-    
+
     if (!horse) {
       return res.status(404).json({ message: 'Лошадь не найдена' });
     }
@@ -99,9 +99,10 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
     });
 
     await horse.save();
-    await horse.populate('owner', 'firstName lastName email');
+    await horse.populate('owner', 'first_name last_name email');
 
-    logger.info(`Обновлена лошадь: ${horse.name}`);
+    const action = req.body.isActive === false ? 'архивирована' : req.body.isActive === true ? 'восстановлена' : 'обновлена';
+    logger.info(`Лошадь ${action}: ${horse.name}`);
 
     res.json({
       success: true,
@@ -117,7 +118,7 @@ router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const horse = await Horse.findById(req.params.id);
-    
+
     if (!horse) {
       return res.status(404).json({ message: 'Лошадь не найдена' });
     }

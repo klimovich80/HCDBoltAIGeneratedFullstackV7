@@ -50,14 +50,22 @@ const Sidebar: React.FC = () => {
 
       <div className="absolute bottom-0 w-64 p-4">
         <div className="flex items-center space-x-3 mb-4">
-          <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
-            </span>
-          </div>
+          {user?.profileImage ? (
+            <img
+              src={user.profileImage}
+              alt={`${user.first_name} ${user.last_name}`}
+              className="h-8 w-8 rounded-full object-cover border border-indigo-200"
+            />
+          ) : (
+            <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-sm font-medium">
+                {user?.first_name?.[0]}{user?.last_name?.[0]}
+              </span>
+            </div>
+          )}
           <div>
             <p className="text-sm font-medium text-gray-900">
-              {user?.firstName} {user?.lastName}
+              {user?.first_name} {user?.last_name}
             </p>
             <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
           </div>

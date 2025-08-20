@@ -5,7 +5,7 @@
   
   1. Sample Users
     - Admin user
-    - Trainers
+    - trainers
     - Members with different tiers
     
   2. Sample Horses
@@ -56,7 +56,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Insert sample events
 INSERT INTO events (id, title, description, event_type, start_date, end_date, organizer_id, max_participants, registration_fee) VALUES
   ('e1111111-1111-1111-1111-111111111111', 'Winter Dressage Competition', 'Annual winter dressage competition for all levels', 'competition', '2024-12-28 08:00:00+00', '2024-12-28 18:00:00+00', '22222222-2222-2222-2222-222222222222', 50, 45.00),
-  ('e2222222-2222-2222-2222-222222222222', 'Jumping Clinic with Expert Trainer', 'Two-day intensive jumping clinic', 'clinic', '2025-01-15 09:00:00+00', '2025-01-16 17:00:00+00', '33333333-3333-3333-3333-333333333333', 20, 180.00),
+  ('e2222222-2222-2222-2222-222222222222', 'Jumping Clinic with Expert trainer', 'Two-day intensive jumping clinic', 'clinic', '2025-01-15 09:00:00+00', '2025-01-16 17:00:00+00', '33333333-3333-3333-3333-333333333333', 20, 180.00),
   ('e3333333-3333-3333-3333-333333333333', 'New Year Social Ride', 'Celebratory group ride and BBQ', 'social', '2025-01-01 11:00:00+00', '2025-01-01 16:00:00+00', '22222222-2222-2222-2222-222222222222', 30, 25.00)
 ON CONFLICT (id) DO NOTHING;
 
@@ -87,7 +87,7 @@ INSERT INTO feed_records (id, horse_id, feed_type, amount, unit, feeding_time, f
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert sample stall assignments
-INSERT INTO stall_assignments (id, stall_number, horse_id, assigned_date, monthly_rate, is_active) VALUES
+INSERT INTO stall_assignments (id, stall_number, horse_id, assigned_date, monthly_rate, isActive) VALUES
   ('s1111111-1111-1111-1111-111111111111', 'S01', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2024-11-01', 340.00, true),
   ('s2222222-2222-2222-2222-222222222222', 'S02', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '2024-10-15', 340.00, true),
   ('s3333333-3333-3333-3333-333333333333', 'S03', 'cccccccc-cccc-cccc-cccc-cccccccccccc', '2024-11-10', 280.00, true),

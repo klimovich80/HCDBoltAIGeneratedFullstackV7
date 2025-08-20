@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    //unique: true, //TODO
+    unique: true,
     lowercase: true,
     trim: true
   },
@@ -46,38 +46,68 @@ const userSchema = new mongoose.Schema({
   is_active: {
     type: Boolean,
     default: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  profileImage: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true
 });
 
 // Индексы
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
+userSchema.index({ isActive: 1 });
 
-// Хешируем пароль перед сохранением
-userSchema.pre('save', function (next) {
+// Hash password before saving (for both create and update operations)
+userSchema.pre('save', async function (next) {
+  // Only hash the password if it has been modified (or is new)
   if (!this.isModified('password')) return next();
 
-  bcrypt.genSalt(10)
-    .then(salt => bcrypt.hash(this.password, salt))
-    .then(hashedPassword => {
-      this.password = hashedPassword;
-      next();
-    })
-    .catch(error => next(error));
+  try {
+    // Generate salt with cost factor of 12 for strong security
+    const salt = await bcrypt.genSalt(12);
+
+    // Hash the password with the generated salt
+    this.password = await bcrypt.hash(this.password, salt);
+
+    console.log(`Password hashed for user: ${this.email}`);
+    next();
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    next(error);
+  }
 });
 
-// Метод для сравнения паролей
-userSchema.methods.comparePassword = function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+// Method to compare passwords during login
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    console.error('Error comparing passwords:', error);
+    throw new Error('Password comparison failed');
+  }
 };
 
-// Удаляем пароль из JSON ответа
+// Remove password from JSON response for security
 userSchema.methods.toJSON = function () {
   const userObject = this.toObject();
   delete userObject.password;
   return userObject;
+};
+
+// Static method to hash password manually if needed
+userSchema.statics.hashPassword = async function (password) {
+  try {
+    const salt = await bcrypt.genSalt(12);
+    return await bcrypt.hash(password, salt);
+  } catch (error) {
+    throw new Error('Password hashing failed');
+  }
 };
 
 module.exports = mongoose.model('User', userSchema);

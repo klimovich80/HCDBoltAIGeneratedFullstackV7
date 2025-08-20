@@ -32,7 +32,8 @@
     "docker:logs": "docker-compose logs -f"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "vite": "^6.3.5"
   },
   "engines": {
     "node": ">=18.0.0",

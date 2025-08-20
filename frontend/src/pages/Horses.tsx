@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Edit, Eye } from 'lucide-react'
+import { Search, Plus, Edit, Eye, Archive, RotateCcw, Trash2 } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
+import HorseDetail from '../components/HorseDetail'
 
 interface Horse {
   _id: string
@@ -10,12 +11,14 @@ interface Horse {
   age: number
   gender: 'mare' | 'stallion' | 'gelding'
   color: string
+  profileImage?: string
   boardingType: 'full' | 'partial' | 'pasture'
   stallNumber?: string
   vaccinationStatus: 'current' | 'due' | 'overdue'
+  isActive?: boolean
   owner?: {
-    firstName: string
-    lastName: string
+    first_name: string
+    last_name: string
   }
 }
 
@@ -24,6 +27,11 @@ const Horses: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingHorse, setEditingHorse] = useState<Horse | null>(null)
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [viewingHorse, setViewingHorse] = useState<Horse | null>(null)
+  const [showDetailView, setShowDetailView] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   useEffect(() => {
     const fetchHorses = () => {
@@ -44,10 +52,12 @@ const Horses: React.FC = () => {
               age: 8,
               gender: 'gelding',
               color: 'Bay',
+              profileImage: 'https://images.pexels.com/photos/1996333/pexels-photo-1996333.jpeg?auto=compress&cs=tinysrgb&w=400',
               boardingType: 'full',
               stallNumber: 'S01',
               vaccinationStatus: 'current',
-              owner: { firstName: 'Emma', lastName: 'Williams' }
+              isActive: true,
+              owner: { first_name: 'Emma', last_name: 'Williams' }
             },
             {
               _id: '2',
@@ -56,10 +66,12 @@ const Horses: React.FC = () => {
               age: 12,
               gender: 'mare',
               color: 'Gray',
+              profileImage: 'https://images.pexels.com/photos/1996334/pexels-photo-1996334.jpeg?auto=compress&cs=tinysrgb&w=400',
               boardingType: 'full',
               stallNumber: 'S02',
               vaccinationStatus: 'current',
-              owner: { firstName: 'James', lastName: 'Brown' }
+              isActive: true,
+              owner: { first_name: 'James', last_name: 'Brown' }
             },
             {
               _id: '3',
@@ -71,7 +83,21 @@ const Horses: React.FC = () => {
               boardingType: 'partial',
               stallNumber: 'S03',
               vaccinationStatus: 'due',
-              owner: { firstName: 'Sophie', lastName: 'Davis' }
+              isActive: true,
+              owner: { first_name: 'Sophie', last_name: 'Davis' }
+            },
+            {
+              _id: '4',
+              name: 'Retired Champion',
+              breed: 'Warmblood',
+              age: 20,
+              gender: 'gelding',
+              color: 'Black',
+              boardingType: 'pasture',
+              stallNumber: '',
+              vaccinationStatus: 'current',
+              isActive: false,
+              owner: { first_name: 'Former', last_name: 'Owner' }
             }
           ])
         })
@@ -99,9 +125,79 @@ const Horses: React.FC = () => {
     fetchHorses()
   }
 
+  const handleEditHorse = (horse: Horse) => {
+    setEditingHorse(horse)
+    setShowEditForm(true)
+  }
+
+  const handleEditSuccess = () => {
+    // Refresh the horses list
+    const fetchHorses = () => {
+      apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        .then(response => {
+          if (response.success) {
+            setHorses(response.data)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch horses:', error)
+        })
+    }
+    fetchHorses()
+    setEditingHorse(null)
+  }
+
+  const handleCloseEditForm = () => {
+    setShowEditForm(false)
+    setEditingHorse(null)
+  }
+
+  const handleViewHorse = (horse: Horse) => {
+    setViewingHorse(horse)
+    setShowDetailView(true)
+  }
+
+  const handleCloseDetailView = () => {
+    setShowDetailView(false)
+    setViewingHorse(null)
+  }
+
+  const handleArchiveHorse = async (horse: Horse) => {
+    if (window.confirm(`Вы уверены, что хотите ${horse.isActive ? 'архивировать' : 'восстановить'} лошадь "${horse.name}"?`)) {
+      try {
+        await apiClient.update('horses', horse._id, { isActive: !horse.isActive })
+        // Refresh the horses list
+        const response = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        if (response.success) {
+          setHorses(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to archive/restore horse:', error)
+        alert('Ошибка при архивировании/восстановлении лошади')
+      }
+    }
+  }
+
+  const handleDeleteHorse = async (horse: Horse) => {
+    if (window.confirm(`Вы уверены, что хотите УДАЛИТЬ лошадь "${horse.name}"? Это действие нельзя отменить и удалит все связанные данные (занятия, платежи и т.д.).`)) {
+      try {
+        await apiClient.delete('horses', horse._id)
+        // Refresh the horses list
+        const response = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        if (response.success) {
+          setHorses(response.data)
+        }
+        alert('Лошадь успешно удалена')
+      } catch (error) {
+        console.error('Failed to delete horse:', error)
+        alert('Ошибка при удалении лошади')
+      }
+    }
+  }
   const filteredHorses = horses.filter(horse =>
-    horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    horse.breed.toLowerCase().includes(searchTerm.toLowerCase())
+    (horse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      horse.breed.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (showArchived ? !horse.isActive : horse.isActive !== false)
   )
 
   const getVaccinationStatusColor = (status: string) => {
@@ -137,7 +233,7 @@ const Horses: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Лошади</h1>
           <p className="text-gray-600">Управляйте лошадьми и их информацией</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddForm(true)}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center space-x-2"
         >
@@ -148,15 +244,28 @@ const Horses: React.FC = () => {
 
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b border-gray-200">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск лошадей..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex justify-between items-center">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск лошадей..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="ml-2 text-sm text-gray-700">Показать архивированные</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -186,11 +295,31 @@ const Horses: React.FC = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredHorses.map((horse) => (
-                <tr key={horse._id} className="hover:bg-gray-50">
+                <tr key={horse._id} className={`hover:bg-gray-50 ${horse.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{horse.name}</div>
-                      <div className="text-sm text-gray-500">{horse.breed}</div>
+                    <div className="flex items-center">
+                      {horse.profileImage ? (
+                        <img
+                          src={horse.profileImage}
+                          alt={horse.name}
+                          className="h-10 w-10 rounded-full object-cover mr-3"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-gray-600 text-xs font-medium">
+                            {horse.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="text-sm font-medium text-gray-900">
+                        {horse.name}
+                        {horse.isActive === false && (
+                          <span className="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Архивировано
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">&nbsp;{horse.breed}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -208,7 +337,7 @@ const Horses: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {horse.owner ? `${horse.owner.firstName} ${horse.owner.lastName}` : 'Школьная лошадь'}
+                      {horse.owner ? `${horse.owner.first_name} ${horse.owner.last_name}` : 'Школьная лошадь'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -218,11 +347,33 @@ const Horses: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-indigo-600 hover:text-indigo-900">
+                      <button
+                        onClick={() => handleViewHorse(horse)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                        title="Просмотр информации о лошади"
+                      >
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900">
+                      <button
+                        onClick={() => handleEditHorse(horse)}
+                        className="text-gray-600 hover:text-gray-900"
+                        title="Редактировать лошадь"
+                      >
                         <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleArchiveHorse(horse)}
+                        className={`${horse.isActive === false ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
+                        title={horse.isActive === false ? 'Восстановить лошадь' : 'Архивировать лошадь'}
+                      >
+                        {horse.isActive === false ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteHorse(horse)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Удалить лошадь"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -237,6 +388,21 @@ const Horses: React.FC = () => {
         isOpen={showAddForm}
         onClose={() => setShowAddForm(false)}
         onSuccess={handleAddSuccess}
+        mode="create"
+      />
+
+      <HorseForm
+        isOpen={showEditForm}
+        onClose={handleCloseEditForm}
+        onSuccess={handleEditSuccess}
+        horse={editingHorse}
+        mode="edit"
+      />
+
+      <HorseDetail
+        isOpen={showDetailView}
+        onClose={handleCloseDetailView}
+        horse={viewingHorse}
       />
     </div>
   )

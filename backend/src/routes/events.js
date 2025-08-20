@@ -9,15 +9,15 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, eventType, status } = req.query;
-    
+
     let query = {};
-    
+
     if (eventType) query.eventType = eventType;
     if (status) query.status = status;
 
     const events = await Event.find(query)
-      .populate('organizer', 'firstName lastName email')
-      .populate('participants.user', 'firstName lastName email')
+      .populate('organizer', 'first_name last_name email')
+      .populate('participants.user', 'first_name last_name email')
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ startDate: 1 });
@@ -44,10 +44,10 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('organizer', 'firstName lastName email phone')
-      .populate('participants.user', 'firstName lastName email phone')
-      .populate('waitlist.user', 'firstName lastName email phone');
-    
+      .populate('organizer', 'first_name last_name email phone')
+      .populate('participants.user', 'first_name last_name email phone')
+      .populate('waitlist.user', 'first_name last_name email phone');
+
     if (!event) {
       return res.status(404).json({ message: 'Мероприятие не найдено' });
     }
@@ -67,11 +67,11 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const event = new Event({
       ...req.body,
-      organizer: req.user._id
+      organizer: req.user.userId
     });
-    
+
     await event.save();
-    await event.populate('organizer', 'firstName lastName email');
+    await event.populate('organizer', 'first_name last_name email');
 
     logger.info(`Создано новое мероприятие: ${event.title}`);
 
@@ -85,18 +85,70 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
   }
 });
 
+// Обновить мероприятие
+router.put('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Мероприятие не найдено' });
+    }
+
+    Object.keys(req.body).forEach(key => {
+      event[key] = req.body[key];
+    });
+
+    await event.save();
+    await event.populate('organizer', 'first_name last_name email');
+
+    const action = req.body.isActive === false ? 'архивировано' : req.body.isActive === true ? 'восстановлено' : 'обновлено';
+    logger.info(`Мероприятие ${action}: ${event.title}`);
+
+    res.json({
+      success: true,
+      data: event
+    });
+  } catch (error) {
+    logger.error('Ошибка обновления мероприятия:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// Удалить мероприятие
+router.delete('/:id', auth, authorize('admin', 'trainer'), async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Мероприятие не найдено' });
+    }
+
+    await event.deleteOne();
+
+    logger.info(`Удалено мероприятие: ${event.title}`);
+
+    res.json({
+      success: true,
+      message: 'Мероприятие успешно удалено'
+    });
+  } catch (error) {
+    logger.error('Ошибка удаления мероприятия:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
 // Регистрация на мероприятие
 router.post('/:id/register', auth, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    
+
     if (!event) {
       return res.status(404).json({ message: 'Мероприятие не найдено' });
     }
 
     // Проверка, не зарегистрирован ли уже пользователь
     const alreadyRegistered = event.participants.some(
-      p => p.user.toString() === req.user._id.toString()
+      p => p.user.toString() === req.user.userId.toString()
     );
 
     if (alreadyRegistered) {
@@ -106,9 +158,9 @@ router.post('/:id/register', auth, async (req, res) => {
     // Проверка лимита участников
     if (event.maxParticipants && event.participants.length >= event.maxParticipants) {
       // Добавить в лист ожидания
-      event.waitlist.push({ user: req.user._id });
+      event.waitlist.push({ user: req.user.userId });
       await event.save();
-      
+
       return res.json({
         success: true,
         message: 'Добавлен в лист ожидания',
@@ -117,10 +169,10 @@ router.post('/:id/register', auth, async (req, res) => {
     }
 
     // Регистрация участника
-    event.participants.push({ user: req.user._id });
+    event.participants.push({ user: req.user.userId });
     await event.save();
 
-    logger.info(`Пользователь ${req.user.email} зарегистрирован на мероприятие: ${event.title}`);
+    logger.info(`Пользователь зарегистрирован на мероприятие: ${event.title}`);
 
     res.json({
       success: true,

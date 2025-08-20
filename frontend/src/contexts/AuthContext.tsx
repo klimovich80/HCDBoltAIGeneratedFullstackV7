@@ -3,10 +3,11 @@ import { apiClient } from '../lib/api'
 
 interface User {
   id: string
-  firstName: string
-  lastName: string
+  first_name: string
+  last_name: string
   email: string
   role: 'admin' | 'trainer' | 'member' | 'guest'
+  profileImage?: string
 }
 
 interface AuthContextType {

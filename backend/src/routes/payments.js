@@ -9,9 +9,9 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, paymentType, member } = req.query;
-    
+
     let query = {};
-    
+
     if (status) query.status = status;
     if (paymentType) query.paymentType = paymentType;
     if (member) query.member = member;
@@ -22,7 +22,7 @@ router.get('/', auth, async (req, res) => {
     }
 
     const payments = await Payment.find(query)
-      .populate('member', 'firstName lastName email')
+      .populate('member', 'first_name last_name email')
       .populate('reference')
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -50,9 +50,9 @@ router.get('/', auth, async (req, res) => {
 router.get('/:id', auth, async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id)
-      .populate('member', 'firstName lastName email phone')
+      .populate('member', 'first_name last_name email phone')
       .populate('reference');
-    
+
     if (!payment) {
       return res.status(404).json({ message: 'Платеж не найден' });
     }
@@ -78,7 +78,7 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
     const payment = new Payment(req.body);
     await payment.save();
 
-    await payment.populate('member', 'firstName lastName email');
+    await payment.populate('member', 'first_name last_name email');
 
     logger.info(`Создан новый платеж: ${payment.invoiceNumber}`);
 
@@ -96,9 +96,9 @@ router.post('/', auth, authorize('admin', 'trainer'), async (req, res) => {
 router.patch('/:id/status', auth, authorize('admin', 'trainer'), async (req, res) => {
   try {
     const { status, paidDate } = req.body;
-    
+
     const payment = await Payment.findById(req.params.id);
-    
+
     if (!payment) {
       return res.status(404).json({ message: 'Платеж не найден' });
     }
