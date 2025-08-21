@@ -52,6 +52,7 @@ app.use('/api/lessons', require('./routes/lessons'));
 app.use('/api/events', require('./routes/events'));
 app.use('/api/equipment', require('./routes/equipment'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/stats', require('./routes/stats'));
 
 // Обработка ошибок 404
 app.use('*', (req, res) => {
