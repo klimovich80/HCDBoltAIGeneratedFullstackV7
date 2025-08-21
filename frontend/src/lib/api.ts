@@ -262,6 +262,22 @@ class ApiClient {
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
+  async get<T>(endpoint: string): Promise<ServerResponse<T>> {
+    try {
+      const response = await this.request<T>(endpoint, {
+        method: 'GET',
+      });
+      
+      return response;
+    } catch (error) {
+      console.error('GET request failed:', error);
+      return {
+        success: false,
+        message: (error as Error).message
+      };
+    }
+  }
+
   getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`);
   }
