@@ -3,7 +3,8 @@ import { X, Calendar, DollarSign, User, FileText, CreditCard } from 'lucide-reac
 
 interface Payment {
   _id: string
-  member: {
+  user: {
+    _id: string
     first_name: string
     last_name: string
     email?: string
@@ -11,7 +12,7 @@ interface Payment {
   }
   amount: number
   payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'transfer' | 'check'
+  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
   status: 'pending' | 'paid' | 'overdue' | 'cancelled'
   due_date: string
   paid_date?: string
@@ -77,32 +78,48 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment 
     switch (method) {
       case 'cash': return 'Наличные'
       case 'card': return 'Карта'
-      case 'transfer': return 'Перевод'
-      case 'check': return 'Чек'
+      case 'bank_transfer': return 'Банковский перевод'
+      case 'online': return 'Онлайн оплата'
       default: return method
     }
   }
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Не указано'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    } catch {
+      return 'Неверный формат даты'
+    }
   }
 
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return 'Не указано'
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    } catch {
+      return 'Неверный формат даты'
+    }
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 0
+    }).format(amount)
   }
 
   return (
@@ -146,7 +163,7 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment 
                     <span className="text-gray-600">Сумма:</span>
                     <span className="text-2xl font-bold text-gray-900 flex items-center">
                       <DollarSign className="h-5 w-5 mr-1" />
-                      {payment.amount.toLocaleString()}₽
+                      {formatCurrency(payment.amount)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -177,20 +194,20 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment 
                 </div>
               </div>
 
-              {/* Member Information */}
+              {/* User Information */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Участник</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Пользователь</h3>
                 <div className="bg-blue-50 rounded-lg p-4">
                   <div className="space-y-1">
                     <p className="text-gray-700 font-medium flex items-center">
                       <User className="h-4 w-4 mr-2" />
-                      {payment.member.first_name} {payment.member.last_name}
+                      {payment.user.first_name} {payment.user.last_name}
                     </p>
-                    {payment.member.email && (
-                      <p className="text-sm text-gray-600">{payment.member.email}</p>
+                    {payment.user.email && (
+                      <p className="text-sm text-gray-600">{payment.user.email}</p>
                     )}
-                    {payment.member.phone && (
-                      <p className="text-sm text-gray-600">{payment.member.phone}</p>
+                    {payment.user.phone && (
+                      <p className="text-sm text-gray-600">{payment.user.phone}</p>
                     )}
                   </div>
                 </div>
@@ -256,6 +273,11 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment 
                         Просрочен с {formatDate(payment.due_date)}
                       </span>
                     )}
+                    {payment.status === 'pending' && (
+                      <span className="text-sm text-yellow-600">
+                        Ожидает оплаты до {formatDate(payment.due_date)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -272,7 +294,7 @@ const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment 
                     Создан: {formatDateTime(payment.createdAt)}
                   </div>
                 )}
-                {payment.updatedAt && (
+                {payment.updatedAt && payment.updatedAt !== payment.createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     Обновлен: {formatDateTime(payment.updatedAt)}
