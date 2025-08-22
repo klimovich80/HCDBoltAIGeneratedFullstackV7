@@ -1,3 +1,4 @@
+// api.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Интерфейсы для типов данных
@@ -238,19 +239,19 @@ class ApiClient {
   }
     
   async getCurrentUser(): Promise<User | null> {
-  try {
-    const response = await this.request<User>('/auth/me');
-    
-    if (response.success) {
-      // Возвращаем непосредственно пользователя, а не весь response
-      return response.data || response.user || null;
+    try {
+      const response = await this.request<User>('/auth/me');
+      
+      if (response.success) {
+        // Возвращаем непосредственно пользователя, а не весь response
+        return response.data || response.user || null;
+      }
+      return null;
+    } catch (error) {
+      console.error('Ошибка получения текущего пользователя:', error);
+      return null;
     }
-    return null;
-  } catch (error) {
-    console.error('Ошибка получения текущего пользователя:', error);
-    return null;
   }
-}
 
   logout(): void {
     this.setToken(null);
@@ -282,14 +283,14 @@ class ApiClient {
     return this.request<T>(`/${resource}/${id}`);
   }
 
-  create<T>(resource: string, data: Partial<T>): Promise<ServerResponse<T>> {
+  create<T>(resource: string, data: unknown): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  update<T>(resource: string, id: string, data: Partial<T>): Promise<ServerResponse<T>> {
+  update<T>(resource: string, id: string, data: unknown): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-import { Equipment, Horse, EquipmentFormData, EquipmentFormProps, MaintenanceData } from '../types/equipment'
+import { Equipment, Horse, EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
 
 const EquipmentForm: React.FC<EquipmentFormProps> = ({ 
   isOpen, 
@@ -38,9 +38,9 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
       try {
         setLoadingData(true)
         
-        const horsesResponse = await apiClient.getAll<{ success: boolean; data: Horse[] }>('horses')
+        const horsesResponse = await apiClient.getAll<Horse[]>('horses')
         if (horsesResponse.success) {
-          setHorses(horsesResponse.data)
+          setHorses(horsesResponse.data || [])
         }
       } catch (error) {
         console.error('Не удалось загрузить лошадей:', error)
@@ -79,7 +79,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         purchaseDate,
         cost: equipment.cost,
         currentValue: equipment.currentValue,
-        assignedHorse: equipment.assignedHorse?._id || '', // Используем _id вместо объекта
+        assignedHorse: equipment.assignedHorse?._id || '',
         lastMaintenance,
         nextMaintenance,
         maintenanceNotes: equipment.maintenanceNotes || '',
@@ -124,8 +124,8 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         }
         await apiClient.update('equipment', equipment._id, maintenanceData)
       } else {
-        // Для режимов создания и редактирования используем все поля
-        const cleanedData: any = {
+        // Для режимов создания и редактирования используем правильный интерфейс
+        const requestData: EquipmentRequest = {
           name: formData.name,
           category: formData.category,
           brand: formData.brand || undefined,
@@ -135,6 +135,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
           purchaseDate: formData.purchaseDate || undefined,
           cost: formData.cost,
           currentValue: formData.currentValue,
+          assignedHorse: formData.assignedHorse || undefined,
           lastMaintenance: formData.lastMaintenance || undefined,
           nextMaintenance: formData.nextMaintenance || undefined,
           maintenanceNotes: formData.maintenanceNotes || undefined,
@@ -142,15 +143,10 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
           notes: formData.notes || undefined
         }
 
-        // Добавляем assignedHorse только если он есть
-        if (formData.assignedHorse) {
-          cleanedData.assignedHorse = formData.assignedHorse
-        }
-
         if (mode === 'edit' && equipment) {
-          await apiClient.update('equipment', equipment._id, cleanedData)
+          await apiClient.update('equipment', equipment._id, requestData)
         } else {
-          await apiClient.create('equipment', cleanedData)
+          await apiClient.create('equipment', requestData)
         }
       }
 
