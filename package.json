@@ -38,5 +38,9 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "express-mongo-sanitize": "^2.2.0",
+    "hpp": "^0.2.3"
   }
 }

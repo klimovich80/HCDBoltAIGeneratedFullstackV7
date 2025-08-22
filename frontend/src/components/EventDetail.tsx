@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Calendar, MapPin, Users, DollarSign, FileText, Trophy, Mail, Phone, User } from 'lucide-react'
+import { X, Calendar, MapPin, Users, DollarSign, FileText, Trophy, Mail, Phone, User, Clock } from 'lucide-react'
 import { EventDetailProps } from '../types/events'
 
 const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => {
@@ -74,10 +74,25 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
     })
   }
 
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    
+    if (diffInHours < 24) {
+      return `${diffInHours} часов назад`
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24)
+      return `${diffInDays} дней назад`
+    }
+  }
+
   const { date: startDate, time: startTime } = formatDateTime(event.startDate)
   const { date: endDate, time: endTime } = formatDateTime(event.endDate)
 
   const isSameDay = startDate === endDate
+  const participantsCount = event.participants.length
+  const waitlistCount = event.waitlist?.length || 0
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -149,8 +164,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
                   <div className="flex items-center space-x-3">
                     <Users className="h-5 w-5 text-gray-400" />
                     <div className="text-sm text-gray-900">
-                      {event.participants.length} участников
+                      {participantsCount} участников
                       {event.maxParticipants && ` из ${event.maxParticipants}`}
+                      {waitlistCount > 0 && `, ${waitlistCount} в листе ожидания`}
                     </div>
                   </div>
 
@@ -225,32 +241,42 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
               )}
 
               {/* Participants Preview */}
-              {event.participants.length > 0 && (
+              {participantsCount > 0 && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
                     <Users className="h-4 w-4 mr-2" />
-                    Участники ({event.participants.length})
+                    Участники ({participantsCount})
                   </h4>
                   <div className="bg-green-50 rounded-lg p-4">
                     <div className="space-y-2">
                       {event.participants.slice(0, 3).map((participant) => (
-                        <div key={participant._id} className="flex items-center justify-between">
+                        <div key={participant.user._id} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
                               <User className="h-4 w-4 text-white" />
                             </div>
-                            <span className="text-sm text-gray-700">
-                              {participant.first_name} {participant.last_name}
-                            </span>
+                            <div>
+                              <span className="text-sm text-gray-700 block">
+                                {participant.user.first_name} {participant.user.last_name}
+                              </span>
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatRelativeTime(participant.registeredAt)}
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-xs text-gray-500 capitalize bg-green-100 px-2 py-1 rounded-full">
-                            {participant.role}
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            participant.paymentStatus === 'paid' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {participant.paymentStatus === 'paid' ? 'Оплачено' : 'Ожидает оплаты'}
                           </span>
                         </div>
                       ))}
-                      {event.participants.length > 3 && (
+                      {participantsCount > 3 && (
                         <p className="text-xs text-gray-500 mt-2">
-                          и еще {event.participants.length - 3} участников...
+                          и еще {participantsCount - 3} участников...
                         </p>
                       )}
                     </div>
@@ -260,15 +286,55 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
                           <div 
                             className="bg-green-600 h-2 rounded-full" 
                             style={{ 
-                              width: `${Math.min((event.participants.length / event.maxParticipants) * 100, 100)}%` 
+                              width: `${Math.min((participantsCount / event.maxParticipants) * 100, 100)}%` 
                             }}
                           ></div>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
-                          {event.maxParticipants - event.participants.length} мест осталось
+                          {event.maxParticipants - participantsCount} мест осталось
                         </p>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Waitlist Preview */}
+              {waitlistCount > 0 && (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2 flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    Лист ожидания ({waitlistCount})
+                  </h4>
+                  <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="space-y-2">
+                      {event.waitlist!.slice(0, 3).map((waitlistParticipant) => (
+                        <div key={waitlistParticipant.user._id} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="h-8 w-8 bg-orange-600 rounded-full flex items-center justify-center">
+                              <User className="h-4 w-4 text-white" />
+                            </div>
+                            <div>
+                              <span className="text-sm text-gray-700 block">
+                                {waitlistParticipant.user.first_name} {waitlistParticipant.user.last_name}
+                              </span>
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatRelativeTime(waitlistParticipant.addedAt)}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+                            В ожидании
+                          </span>
+                        </div>
+                      ))}
+                      {waitlistCount > 3 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          и еще {waitlistCount - 3} в списке ожидания...
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
