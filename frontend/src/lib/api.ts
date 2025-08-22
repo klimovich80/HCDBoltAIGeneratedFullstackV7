@@ -1,4 +1,5 @@
 // api.ts
+// Базовый URL API, берется из переменной окружения или используется значение по умолчанию
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Lesson, LessonFormData } from "../types/lesson";
 import { User } from "../types/user";
@@ -10,9 +11,11 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+    // При инициализации пытаемся получить токен из localStorage
     this.token = localStorage.getItem('token');
   }
 
+  // Установка/удаление токена аутентификации
   setToken(token: string | null): void {
     this.token = token;
     if (token) {
@@ -22,22 +25,26 @@ class ApiClient {
     }
   }
 
+  // Базовый метод для выполнения HTTP-запросов
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
     timeout = 8000
   ): Promise<ServerResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
+    // Исправлено: используем URL для корректного формирования адреса
+    const url = new URL(endpoint, this.baseURL).toString();
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     
-    // Prepare headers
+    // Подготовка заголовков
     const headers: Record<string, string> = {};
     
+    // Устанавливаем Content-Type для JSON, если тело не FormData
     if (!(options.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
     
+    // Добавляем токен авторизации, если он есть
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
@@ -55,7 +62,7 @@ class ApiClient {
       const response = await fetch(url, config);
       clearTimeout(id);
       
-      // Handle empty responses (like 204 No Content)
+      // Обработка пустых ответов (например, 204 No Content)
       if (response.status === 204) {
         return {
           success: true,
@@ -63,6 +70,7 @@ class ApiClient {
         };
       }
       
+      // Обработка HTTP ошибок
       if (!response.ok) {
         let errorData: { message?: string } = {};
         try {
@@ -77,6 +85,7 @@ class ApiClient {
         );
       }
       
+      // Парсинг успешного ответа
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
       
@@ -98,6 +107,7 @@ class ApiClient {
     }
   }
 
+  // Метод для загрузки файлов
   async upload<T>(endpoint: string, formData: FormData): Promise<ServerResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
@@ -136,6 +146,7 @@ class ApiClient {
     }
   }
     
+  // Метод регистрации нового пользователя
   async register(userData: Partial<User>): Promise<AuthResponse> {
     try {
       const response = await this.request<AuthResponse>('/auth/register', {
@@ -166,6 +177,7 @@ class ApiClient {
     }
   }
     
+  // Получение информации о текущем пользователе
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await this.request<User>('/auth/me');
@@ -176,24 +188,29 @@ class ApiClient {
     }
   }
 
+  // Выход из системы
   logout(): void {
     this.setToken(null);
   }
 
   // Универсальные CRUD методы
+  // Получение всех записей ресурса
   getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ServerResponse<T[]>> {
     const queryString = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
+  // Получение данных по конкретному endpoint
   get<T>(endpoint: string): Promise<ServerResponse<T>> {
     return this.request<T>(endpoint);
   }
 
+  // Получение записи по ID
   getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`);
   }
 
+  // Создание новой записи
   create<T>(resource: string, data: unknown): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}`, {
       method: 'POST',
@@ -201,6 +218,7 @@ class ApiClient {
     });
   }
 
+  // Обновление существующей записи
   update<T>(endpoint: string, data: unknown): Promise<ServerResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
@@ -208,6 +226,7 @@ class ApiClient {
     });
   }
 
+  // Удаление записи
   delete<T>(endpoint: string): Promise<ServerResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
@@ -232,6 +251,7 @@ class ApiClient {
     });
   }
 
+  // Преобразование данных урока для API
   private transformLessonData(lessonData: Partial<LessonFormData>): Record<string, unknown> {
     let scheduledDate = lessonData.scheduled_date;
     
@@ -272,22 +292,28 @@ class ApiClient {
   }
 }
 
+// Создание экземпляра клиента API
 export const apiClient = new ApiClient(API_BASE_URL);
 
-// Помощники аутентификации
+// Вспомогательные функции для аутентификации
+
+// Вход в систему
 export const signIn = (email: string, password: string): Promise<AuthResponse> => {
   return apiClient.login(email, password);
 };
 
+// Регистрация нового пользователя
 export const signUp = (userData: Partial<User>): Promise<AuthResponse> => {
   return apiClient.register(userData);
 };
 
+// Выход из системы
 export const signOut = (): void => {
   apiClient.logout();
   window.location.reload();
 };
 
+// Получение текущего пользователя
 export const getCurrentUser = (): Promise<User | null> => {
   return apiClient.getCurrentUser();
 };

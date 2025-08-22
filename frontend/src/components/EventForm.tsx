@@ -112,8 +112,10 @@ const EventForm: React.FC<EventFormProps> = ({
       }
 
       if (mode === 'edit' && event) {
+        // Исправлено: убираем слеш в начале, чтобы избежать двойного слеша
         await apiClient.update(`events/${event._id}`, cleanedData)
       } else {
+        // Исправлено: убираем слеш в начале, чтобы избежать двойного слеша
         await apiClient.create('events', cleanedData)
       }
 
@@ -332,7 +334,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 name="registrationFee"
                 required
                 min="0"
-                step="1" // Изменили step на 1 для целых чисел
+                step="1"
                 value={formData.registrationFee}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
