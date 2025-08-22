@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-import { EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
+import { EquipmentFormData, EquipmentFormProps, MaintenanceData} from '../types/equipment'
 import { Horse } from '../types/horse'
 
 // Вспомогательная функция для обработки ошибок
@@ -139,7 +139,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         await apiClient.update('equipment', equipment._id, maintenanceData)
       } else {
         // Для режимов создания и редактирования используем правильный интерфейс
-        const requestData: EquipmentRequest = {
+        const requestData: EquipmentFormData = {
           name: formData.name,
           category: formData.category,
           brand: formData.brand || undefined,

@@ -51,6 +51,12 @@ export interface EquipmentFormData {
   notes?: string;
 }
 
+export interface MaintenanceData{
+  lastMaintenance?: string;
+  nextMaintenance?: string;
+  maintenanceNotes?: string;
+  condition: 'excellent' | 'good' | 'fair' | 'poor';
+}
 export interface EquipmentFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -66,8 +72,8 @@ export interface EquipmentDetailProps {
 }
 
 export interface EquipmentPhotosProps {
-  equipment: Equipment;
-  onUpdate: () => void;
   isOpen: boolean;
   onClose: () => void;
+  equipment: Equipment;
+  onUpdate: () => void;
 }

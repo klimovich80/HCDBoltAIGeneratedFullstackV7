@@ -1,8 +1,8 @@
 // components/EquipmentPhotos.tsx
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { X, Upload, Trash2, Star, Image } from 'lucide-react';
-import { apiClient } from '../lib/api';
 import { EquipmentPhotosProps } from '../types/equipment';
+import { useEquipmentPhotos } from '../hooks/useEquipmentPhotos';
 
 const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
   equipment,
@@ -10,79 +10,22 @@ const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
   isOpen,
   onClose
 }) => {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    uploading,
+    error,
+    handleFileSelect,
+    handleSetPrimary,
+    handleDeletePhoto,
+    setError
+  } = useEquipmentPhotos(equipment._id, onUpdate);
 
   if (!isOpen) return null;
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    setUploading(true);
-    setError('');
-    
-    try {
-      const formData = new FormData();
-      Array.from(e.target.files).forEach(file => {
-        formData.append('photos', file);
-      });
-      
-      const response = await apiClient.upload(
-        `equipment/${equipment._id}/photos`,
-        formData
-      );
-      
-      if (response.success) {
-        onUpdate();
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      } else {
-        setError(response.message || 'Ошибка при загрузке фотографий');
-      }
-    } catch (err) {
-      setError('Ошибка при загрузке фотографий');
-      console.error('Upload error:', err);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSetPrimary = async (photoId: string) => {
-    try {
-      const response = await apiClient.update(
-        `equipment/${equipment._id}/photos/${photoId}`,
-        { isPrimary: true }
-      );
-      
-      if (response.success) {
-        onUpdate();
-      } else {
-        setError(response.message || 'Ошибка при установке основной фотографии');
-      }
-    } catch (err) {
-      setError('Ошибка при установке основной фотографии');
-      console.error('Set primary error:', err);
-    }
-  };
-
-  const handleDeletePhoto = async (photoId: string) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту фотографию?')) return;
-    
-    try {
-      const response = await apiClient.delete(
-        `equipment/${equipment._id}/photos/${photoId}`
-      );
-      
-      if (response.success) {
-        onUpdate();
-      } else {
-        setError(response.message || 'Ошибка при удалении фотографии');
-      }
-    } catch (err) {
-      setError('Ошибка при удалении фотографии');
-      console.error('Delete photo error:', err);
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileSelect(e.target.files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -105,10 +48,12 @@ const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
               <p className="text-red-600 text-sm">{error}</p>
+              <button onClick={() => setError('')} className="text-red-600 hover:text-red-800 mt-2">
+                Закрыть
+              </button>
             </div>
           )}
 
-          {/* Загрузка новых фото */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Добавить фотографии
@@ -119,7 +64,7 @@ const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={handleFileSelect}
+                onChange={handleFileInputChange}
                 className="hidden"
                 id="photo-upload"
               />
@@ -139,7 +84,6 @@ const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
             </p>
           </div>
 
-          {/* Галерея фотографий */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Галерея фотографий

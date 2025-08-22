@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { X, Calendar, Package, MapPin, DollarSign, FileText, Wrench, Image, Plus } from 'lucide-react'
 import { EquipmentDetailProps } from '../types/equipment'
 import EquipmentPhotos from './EquipmentPhotos'
