@@ -1,25 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
-import { apiClient } from '../lib/api'
-import { EquipmentFormData, EquipmentFormProps, MaintenanceData} from '../types/equipment'
-import { Horse } from '../types/horse'
-
-// Вспомогательная функция для обработки ошибок
-const getErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message);
-  }
-  
-  return 'Произошла неизвестная ошибка';
-};
+// components/EquipmentForm.tsx
+import React from 'react';
+import { X } from 'lucide-react';
+import { EquipmentFormProps } from '../types/equipment';
+import { useEquipmentForm } from '../hooks/useEquipmentForm';
 
 const EquipmentForm: React.FC<EquipmentFormProps> = ({ 
   isOpen, 
@@ -28,199 +11,21 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
   equipment = null, 
   mode = 'create' 
 }) => {
-  const [formData, setFormData] = useState<EquipmentFormData>({
-    name: '',
-    category: 'saddle',
-    brand: '',
-    model: '',
-    size: '',
-    condition: 'good',
-    purchaseDate: '',
-    cost: undefined,
-    currentValue: undefined,
-    assignedHorse: '',
-    lastMaintenance: '',
-    nextMaintenance: '',
-    maintenanceNotes: '',
-    location: '',
-    notes: ''
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [horses, setHorses] = useState<Horse[]>([])
-  const [loadingData, setLoadingData] = useState(true)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const {
+    formData,
+    loading,
+    error,
+    horses,
+    loadingData,
+    selectedFiles,
+    handleChange,
+    handleFileChange,
+    removeFile,
+    handleSubmit,
+    isFieldDisabled
+  } = useEquipmentForm({ equipment, mode });
 
-  // Загрузка лошадей для назначения
-  useEffect(() => {
-    const loadHorses = async () => {
-      try {
-        setLoadingData(true)
-        
-        const horsesResponse = await apiClient.getAll<Horse>('horses')
-        if (horsesResponse.success) {
-          setHorses(horsesResponse.data || [])
-        }
-      } catch (error) {
-        console.error('Не удалось загрузить лошадей:', error)
-      } finally {
-        setLoadingData(false)
-      }
-    }
-
-    if (isOpen && mode !== 'maintenance') {
-      loadHorses()
-    } else if (isOpen) {
-      setLoadingData(false)
-    }
-  }, [isOpen, mode])
-
-  // Обновление данных формы при изменении свойства equipment
-  useEffect(() => {
-    if (equipment && (mode === 'edit' || mode === 'maintenance')) {
-      const purchaseDate = equipment.purchaseDate ? new Date(equipment.purchaseDate).toISOString().slice(0, 10) : ''
-      const lastMaintenance = equipment.lastMaintenance ? new Date(equipment.lastMaintenance).toISOString().slice(0, 10) : ''
-      const nextMaintenance = equipment.nextMaintenance ? new Date(equipment.nextMaintenance).toISOString().slice(0, 10) : ''
-      
-      setFormData({
-        name: equipment.name,
-        category: equipment.category,
-        brand: equipment.brand || '',
-        model: equipment.model || '',
-        size: equipment.size || '',
-        condition: equipment.condition,
-        purchaseDate,
-        cost: equipment.cost,
-        currentValue: equipment.currentValue,
-        assignedHorse: equipment.assignedHorse?._id || '',
-        lastMaintenance,
-        nextMaintenance,
-        maintenanceNotes: equipment.maintenanceNotes || '',
-        location: equipment.location || '',
-        notes: equipment.notes || ''
-      })
-    } else if (mode === 'create') {
-      // Сброс формы для режима создания
-      setFormData({
-        name: '',
-        category: 'saddle',
-        brand: '',
-        model: '',
-        size: '',
-        condition: 'good',
-        purchaseDate: '',
-        cost: undefined,
-        currentValue: undefined,
-        assignedHorse: '',
-        lastMaintenance: '',
-        nextMaintenance: '',
-        maintenanceNotes: '',
-        location: '',
-        notes: ''
-      })
-      setSelectedFiles([])
-    }
-  }, [equipment, mode])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      if (mode === 'maintenance' && equipment) {
-        // Для режима обслуживания используем специальный интерфейс
-        const maintenanceData: MaintenanceData = {
-          lastMaintenance: formData.lastMaintenance || undefined,
-          nextMaintenance: formData.nextMaintenance || undefined,
-          maintenanceNotes: formData.maintenanceNotes || undefined,
-          condition: formData.condition
-        }
-        await apiClient.update('equipment', equipment._id, maintenanceData)
-      } else {
-        // Для режимов создания и редактирования используем правильный интерфейс
-        const requestData: EquipmentFormData = {
-          name: formData.name,
-          category: formData.category,
-          brand: formData.brand || undefined,
-          model: formData.model || undefined,
-          size: formData.size || undefined,
-          condition: formData.condition,
-          purchaseDate: formData.purchaseDate || undefined,
-          cost: formData.cost,
-          currentValue: formData.currentValue,
-          assignedHorse: formData.assignedHorse || undefined,
-          lastMaintenance: formData.lastMaintenance || undefined,
-          nextMaintenance: formData.nextMaintenance || undefined,
-          maintenanceNotes: formData.maintenanceNotes || undefined,
-          location: formData.location || undefined,
-          notes: formData.notes || undefined
-        }
-
-        if (mode === 'edit' && equipment) {
-          await apiClient.update('equipment', equipment._id, requestData)
-        } else {
-          // Для создания сначала создаем оборудование
-          const createResponse = await apiClient.create('equipment', requestData)
-          
-          // Если есть выбранные файлы, загружаем их
-          if (createResponse.success && selectedFiles.length > 0) {
-            const equipmentId = createResponse.data?._id || createResponse.data?.id
-            
-            if (equipmentId) {
-              const formData = new FormData()
-              selectedFiles.forEach(file => {
-                formData.append('photos', file)
-              })
-              
-              await apiClient.upload(`equipment/${equipmentId}/photos`, formData)
-            }
-          }
-        }
-      }
-
-      onSuccess()
-      onClose()
-      setError('')
-    } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(`Не удалось ${mode === 'edit' ? 'отредактировать' : mode === 'maintenance' ? 'обслужить' : 'создать'} снаряжение: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'cost' || name === 'currentValue' 
-        ? value === '' ? undefined : parseFloat(value) || 0 
-        : value
-    }))
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
-      setSelectedFiles(prev => [...prev, ...filesArray])
-    }
-  }
-
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-  }
-
-  // Функция для проверки, должно ли поле быть отключено в режиме обслуживания
-  const isFieldDisabled = (fieldName: string): boolean => {
-    if (mode !== 'maintenance') return false
-    
-    // В режиме обслуживания редактируем только эти поля
-    const editableFields = ['condition', 'lastMaintenance', 'nextMaintenance', 'maintenanceNotes']
-    return !editableFields.includes(fieldName)
-  }
-
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -247,7 +52,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
             <span className="ml-2 text-gray-600">Загрузка данных...</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <form onSubmit={(e) => handleSubmit(e, onSuccess, onClose)} className="p-6 space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <p className="text-red-600 text-sm">{error}</p>
@@ -598,7 +403,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EquipmentForm
+export default EquipmentForm;
