@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
+import { Horse } from '../types/horse'
 
 // Интерфейсы для типов данных
 interface ApiErrorResponse {
@@ -72,12 +73,6 @@ interface User {
   role: string
 }
 
-interface Horse {
-  _id: string
-  name: string
-  breed: string
-}
-
 const LessonForm: React.FC<LessonFormProps> = ({
   isOpen,
   onClose,
@@ -136,21 +131,6 @@ const LessonForm: React.FC<LessonFormProps> = ({
         }
       } catch (error) {
         console.error('Не удалось загрузить данные:', error)
-        // Установка демонстрационных данных для разработки
-        setInstructors([
-          { _id: '1', first_name: 'Сара', last_name: 'Джонсон', role: 'trainer' },
-          { _id: '2', first_name: 'Майкл', last_name: 'Чен', role: 'trainer' }
-        ])
-        setMembers([
-          { _id: '3', first_name: 'Эмма', last_name: 'Уильямс', role: 'member' },
-          { _id: '4', first_name: 'Джеймс', last_name: 'Браун', role: 'member' },
-          { _id: '5', first_name: 'Софи', last_name: 'Дэвис', role: 'member' }
-        ])
-        setHorses([
-          { _id: '1', name: 'Гром', breed: 'Т thoroughbred' },
-          { _id: '2', name: 'Лунный свет', breed: 'Арабская' },
-          { _id: '3', name: 'Звезда', breed: 'Квотер хорс' }
-        ])
       } finally {
         setLoadingData(false)
       }

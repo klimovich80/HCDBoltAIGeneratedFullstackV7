@@ -1,11 +1,4 @@
 // src/types/equipment.ts
-
-export interface Horse {
-  _id: string
-  name: string
-  breed: string
-}
-
 export interface Equipment {
   _id: string
   name: string

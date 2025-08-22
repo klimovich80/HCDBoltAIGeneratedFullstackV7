@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-import { Horse, EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
+import { EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
+import { Horse } from '../types/horse'
 
 // Вспомогательная функция для обработки ошибок
 const getErrorMessage = (error: unknown): string => {
@@ -61,12 +62,6 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         }
       } catch (error) {
         console.error('Не удалось загрузить лошадей:', error)
-        // Установка демо-данных для разработки
-        setHorses([
-          { _id: '1', name: 'Thunder', breed: 'Чистокровная' },
-          { _id: '2', name: 'Moonlight', breed: 'Арабская' },
-          { _id: '3', name: 'Star', breed: 'Квартерхорс' }
-        ])
       } finally {
         setLoadingData(false)
       }

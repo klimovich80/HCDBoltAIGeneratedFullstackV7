@@ -1,49 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-interface HorseFormData {
-  name: string
-  breed: string
-  age: number
-  gender: 'mare' | 'stallion' | 'gelding'
-  color: string
-  markings?: string
-  profileImage?: string
-  boardingType: 'full' | 'partial' | 'pasture'
-  stallNumber?: string
-  medicalNotes?: string
-  dietaryRestrictions?: string
-  vaccinationStatus: 'current' | 'due' | 'overdue'
-  insuranceInfo?: string
-  registrationNumber?: string
-}
-
-interface HorseFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  horse?: Horse | null
-  mode?: 'create' | 'edit'
-}
-
-interface Horse {
-  _id: string
-  name: string
-  breed: string
-  age: number
-  gender: 'mare' | 'stallion' | 'gelding'
-  color: string
-  markings?: string
-  profileImage?: string
-  boardingType: 'full' | 'partial' | 'pasture'
-  stallNumber?: string
-  medicalNotes?: string
-  dietaryRestrictions?: string
-  vaccinationStatus: 'current' | 'due' | 'overdue'
-  insuranceInfo?: string
-  registrationNumber?: string
-}
+import { HorseFormData, HorseFormProps } from '../types/horse'
 
 const HorseForm: React.FC<HorseFormProps> = ({ 
   isOpen, 

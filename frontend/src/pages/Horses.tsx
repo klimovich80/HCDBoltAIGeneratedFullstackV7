@@ -3,24 +3,7 @@ import { Search, Plus, Edit, Eye, Archive, RotateCcw, Trash2 } from 'lucide-reac
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
 import HorseDetail from '../components/HorseDetail'
-
-interface Horse {
-  _id: string
-  name: string
-  breed: string
-  age: number
-  gender: 'mare' | 'stallion' | 'gelding'
-  color: string
-  profileImage?: string
-  boardingType: 'full' | 'partial' | 'pasture'
-  stallNumber?: string
-  vaccinationStatus: 'current' | 'due' | 'overdue'
-  isActive?: boolean
-  owner?: {
-    first_name: string
-    last_name: string
-  }
-}
+import { Horse } from '../types/horse'
 
 const Horses: React.FC = () => {
   const [horses, setHorses] = useState<Horse[]>([])

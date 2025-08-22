@@ -1,5 +1,6 @@
 // api.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { Horse } from "../types/horse";
 
 // Интерфейсы для типов данных
 interface User {
@@ -12,16 +13,6 @@ interface User {
   createdAt?: string;
   updatedAt?: string;
 }
-
-interface Horse {
-  _id: string;
-  name: string;
-  breed: string;
-  age?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 interface Lesson {
   _id: string;
   title: string;
