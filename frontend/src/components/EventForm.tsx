@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Calendar, Clock, MapPin, Users, DollarSign } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { EventFormData, EventFormProps } from '../types/events'
 
@@ -24,13 +24,19 @@ const EventForm: React.FC<EventFormProps> = ({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Update form data when event prop changes
+  // Обновление данных формы при изменении свойства event
   useEffect(() => {
     if (event && mode === 'edit') {
       const startDate = new Date(event.startDate)
       const endDate = new Date(event.endDate)
-      const formattedStartDate = startDate.toISOString().slice(0, 16)
-      const formattedEndDate = endDate.toISOString().slice(0, 16)
+      
+      // Корректировка смещения часового пояса
+      const timezoneOffset = startDate.getTimezoneOffset() * 60000
+      const localStartDate = new Date(startDate.getTime() - timezoneOffset)
+      const localEndDate = new Date(endDate.getTime() - timezoneOffset)
+      
+      const formattedStartDate = localStartDate.toISOString().slice(0, 16)
+      const formattedEndDate = localEndDate.toISOString().slice(0, 16)
       
       setFormData({
         title: event.title,
@@ -44,11 +50,12 @@ const EventForm: React.FC<EventFormProps> = ({
         requirements: event.requirements || ''
       })
     } else if (mode === 'create') {
-      // Reset form for create mode
+      // Сброс формы для режима создания
       const now = new Date()
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
       const tomorrow = new Date(now)
       tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(now.getHours() + 1)
       
       setFormData({
         title: '',
@@ -62,14 +69,21 @@ const EventForm: React.FC<EventFormProps> = ({
         requirements: ''
       })
     }
-  }, [event, mode])
+  }, [event, mode, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    // Validate dates
+    // Проверка обязательных полей
+    if (!formData.title.trim()) {
+      setError('Название мероприятия обязательно для заполнения')
+      setLoading(false)
+      return
+    }
+
+    // Проверка дат
     const startDate = new Date(formData.startDate)
     const endDate = new Date(formData.endDate)
     
@@ -80,11 +94,11 @@ const EventForm: React.FC<EventFormProps> = ({
     }
 
     try {
-      // Convert datetime-local to ISO string
+      // Преобразование datetime-local в ISO строку
       const startDateISO = startDate.toISOString()
       const endDateISO = endDate.toISOString()
       
-      // Clean data for API
+      // Очистка данных для API
       const cleanedData = {
         ...formData,
         startDate: startDateISO,
@@ -92,11 +106,13 @@ const EventForm: React.FC<EventFormProps> = ({
         location: formData.location || undefined,
         maxParticipants: formData.maxParticipants || undefined,
         description: formData.description || undefined,
-        requirements: formData.requirements || undefined
+        requirements: formData.requirements || undefined,
+        // Убедимся, что registrationFee является числом
+        registrationFee: Number(formData.registrationFee)
       }
 
       if (mode === 'edit' && event) {
-        await apiClient.update('events', event._id, cleanedData)
+        await apiClient.update(`events/${event._id}`, cleanedData)
       } else {
         await apiClient.create('events', cleanedData)
       }
@@ -104,8 +120,12 @@ const EventForm: React.FC<EventFormProps> = ({
       onSuccess()
       onClose()
       setError('')
-    } catch (err: any) {
-      setError(err.message || `Failed to ${mode} event`)
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : `Не удалось ${mode === 'edit' ? 'сохранить' : 'создать'} мероприятие`
+      )
     } finally {
       setLoading(false)
     }
@@ -113,26 +133,65 @@ const EventForm: React.FC<EventFormProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'maxParticipants' || name === 'registrationFee' 
-        ? value === '' ? undefined : parseFloat(value) || 0 
-        : value
-    }))
+    
+    setFormData(prev => {
+      // Обработка числовых полей
+      if (name === 'maxParticipants' || name === 'registrationFee') {
+        // Для пустого значения устанавливаем undefined или 0
+        if (value === '') {
+          return {
+            ...prev,
+            [name]: name === 'registrationFee' ? 0 : undefined
+          }
+        }
+        
+        // Преобразуем в число
+        const numericValue = Number(value)
+        
+        // Проверяем, является ли значение корректным числом
+        if (!isNaN(numericValue)) {
+          return {
+            ...prev,
+            [name]: numericValue
+          }
+        }
+        
+        // Если значение не число, оставляем предыдущее значение
+        return prev
+      }
+      
+      // Для нечисловых полей
+      return {
+        ...prev,
+        [name]: value
+      }
+    })
+  }
+
+  const handleClose = () => {
+    // Проверка на наличие изменений перед закрытием
+    const hasChanges = Object.values(formData).some(value => 
+      value !== '' && value !== 0 && value !== undefined
+    )
+    
+    if (!hasChanges || window.confirm('У вас есть несохраненные изменения. Вы уверены, что хотите закрыть?')) {
+      onClose()
+    }
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-semibold text-gray-900">
             {mode === 'edit' ? 'Редактировать мероприятие' : 'Создать мероприятие'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            disabled={loading}
           >
             <X className="h-6 w-6" />
           </button>
@@ -159,6 +218,7 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Например: Зимние соревнования по выездке"
+                disabled={loading}
               />
             </div>
 
@@ -166,24 +226,33 @@ const EventForm: React.FC<EventFormProps> = ({
               <label htmlFor="eventType" className="block text-sm font-medium text-gray-700 mb-2">
                 Тип мероприятия *
               </label>
-              <select
-                id="eventType"
-                name="eventType"
-                required
-                value={formData.eventType}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="competition">Соревнование</option>
-                <option value="clinic">Клиника</option>
-                <option value="social">Социальное мероприятие</option>
-                <option value="maintenance">Обслуживание</option>
-                <option value="show">Шоу</option>
-              </select>
+              <div className="relative">
+                <select
+                  id="eventType"
+                  name="eventType"
+                  required
+                  value={formData.eventType}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+                  disabled={loading}
+                >
+                  <option value="competition">Соревнование</option>
+                  <option value="clinic">Клиника</option>
+                  <option value="social">Социальное мероприятие</option>
+                  <option value="maintenance">Обслуживание</option>
+                  <option value="show">Шоу</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                  <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <MapPin className="h-4 w-4 mr-1" />
                 Место проведения
               </label>
               <input
@@ -194,26 +263,32 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Например: Главная арена"
+                disabled={loading}
               />
             </div>
 
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
                 Дата и время начала *
               </label>
-              <input
-                type="datetime-local"
-                id="startDate"
-                name="startDate"
-                required
-                value={formData.startDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
+              <div className="relative">
+                <input
+                  type="datetime-local"
+                  id="startDate"
+                  name="startDate"
+                  required
+                  value={formData.startDate}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  disabled={loading}
+                />
+              </div>
             </div>
 
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
                 Дата и время окончания *
               </label>
               <input
@@ -224,11 +299,13 @@ const EventForm: React.FC<EventFormProps> = ({
                 value={formData.endDate}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={loading}
               />
             </div>
 
             <div>
-              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="maxParticipants" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Users className="h-4 w-4 mr-1" />
                 Максимум участников
               </label>
               <input
@@ -240,11 +317,13 @@ const EventForm: React.FC<EventFormProps> = ({
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Без ограничений"
+                disabled={loading}
               />
             </div>
 
             <div>
-              <label htmlFor="registrationFee" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="registrationFee" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <DollarSign className="h-4 w-4 mr-1" />
                 Регистрационный взнос (₽) *
               </label>
               <input
@@ -253,10 +332,11 @@ const EventForm: React.FC<EventFormProps> = ({
                 name="registrationFee"
                 required
                 min="0"
-                step="0.01"
+                step="1" // Изменили step на 1 для целых чисел
                 value={formData.registrationFee}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={loading}
               />
             </div>
           </div>
@@ -273,6 +353,7 @@ const EventForm: React.FC<EventFormProps> = ({
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="Подробное описание мероприятия..."
+              disabled={loading}
             />
           </div>
 
@@ -288,22 +369,30 @@ const EventForm: React.FC<EventFormProps> = ({
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="Требования к участникам, необходимое снаряжение..."
+              disabled={loading}
             />
           </div>
 
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              onClick={handleClose}
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Отмена
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
+              {loading && (
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
               {loading 
                 ? (mode === 'edit' ? 'Сохранение...' : 'Создание...') 
                 : (mode === 'edit' ? 'Сохранить изменения' : 'Создать мероприятие')

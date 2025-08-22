@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Calendar, MapPin, Users, DollarSign, FileText, Trophy } from 'lucide-react'
+import { X, Calendar, MapPin, Users, DollarSign, FileText, Trophy, Mail, Phone, User } from 'lucide-react'
 import { EventDetailProps } from '../types/events'
 
 const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => {
@@ -80,9 +80,9 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
   const isSameDay = startDate === endDate
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
           <div className="flex items-center space-x-4">
             <div className="h-12 w-12 bg-purple-600 rounded-full flex items-center justify-center">
               <Trophy className="h-6 w-6 text-white" />
@@ -96,6 +96,11 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(event.status)}`}>
                   {getStatusLabel(event.status)}
                 </span>
+                {event.isActive === false && (
+                  <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                    Архивировано
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -152,7 +157,7 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
                   <div className="flex items-center space-x-3">
                     <DollarSign className="h-5 w-5 text-gray-400" />
                     <div className="text-sm text-gray-900">
-                      Регистрационный взнос: {event.registrationFee.toLocaleString()}₽
+                      Регистрационный взнос: {event.registrationFee.toLocaleString('ru-RU')}₽
                     </div>
                   </div>
                 </div>
@@ -162,16 +167,30 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Организатор</h3>
                 <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="space-y-1">
-                    <p className="text-gray-700 font-medium">
-                      {event.organizer.first_name} {event.organizer.last_name}
-                    </p>
-                    {event.organizer.email && (
-                      <p className="text-sm text-gray-600">{event.organizer.email}</p>
-                    )}
-                    {event.organizer.phone && (
-                      <p className="text-sm text-gray-600">{event.organizer.phone}</p>
-                    )}
+                  <div className="flex items-start space-x-3">
+                    <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-gray-700 font-medium">
+                        {event.organizer.first_name} {event.organizer.last_name}
+                      </p>
+                      {event.organizer.email && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Mail className="h-4 w-4 mr-1" />
+                          {event.organizer.email}
+                        </div>
+                      )}
+                      {event.organizer.phone && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Phone className="h-4 w-4 mr-1" />
+                          {event.organizer.phone}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500 capitalize">
+                        Роль: {event.organizer.role}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -213,11 +232,30 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
                     Участники ({event.participants.length})
                   </h4>
                   <div className="bg-green-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">
-                      {event.participants.length} человек зарегистрировано на мероприятие
-                    </p>
+                    <div className="space-y-2">
+                      {event.participants.slice(0, 3).map((participant) => (
+                        <div key={participant._id} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <div className="h-8 w-8 bg-green-600 rounded-full flex items-center justify-center">
+                              <User className="h-4 w-4 text-white" />
+                            </div>
+                            <span className="text-sm text-gray-700">
+                              {participant.first_name} {participant.last_name}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500 capitalize bg-green-100 px-2 py-1 rounded-full">
+                            {participant.role}
+                          </span>
+                        </div>
+                      ))}
+                      {event.participants.length > 3 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          и еще {event.participants.length - 3} участников...
+                        </p>
+                      )}
+                    </div>
                     {event.maxParticipants && (
-                      <div className="mt-2">
+                      <div className="mt-3">
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-green-600 h-2 rounded-full" 
@@ -240,14 +278,14 @@ const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => 
           {/* Footer with timestamps */}
           {(event.createdAt || event.updatedAt) && (
             <div className="mt-8 pt-6 border-t border-gray-200">
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex flex-col sm:flex-row justify-between text-sm text-gray-500 gap-2">
                 {event.createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     Создано: {formatDate(event.createdAt)}
                   </div>
                 )}
-                {event.updatedAt && (
+                {event.updatedAt && event.updatedAt !== event.createdAt && (
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     Обновлено: {formatDate(event.updatedAt)}

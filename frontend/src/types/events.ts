@@ -1,3 +1,4 @@
+import { User } from "./user"
 export interface Event {
   _id: string
   title: string
@@ -9,14 +10,16 @@ export interface Event {
   maxParticipants?: number
   registrationFee: number
   organizer: {
+    _id: string
     first_name: string
     last_name: string
     email?: string
     phone?: string
+    role: string // Добавляем поле role
   }
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
   requirements?: string
-  participants: any[]
+  participants: User[]
   createdAt?: string
   updatedAt?: string
   isActive?: boolean
