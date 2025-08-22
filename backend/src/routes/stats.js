@@ -6,6 +6,17 @@ const Lesson = require('../models/Lesson');
 const Event = require('../models/Event');
 const Payment = require('../models/Payment');
 
+// Вспомогательная функция для безопасного преобразования дат
+const safeDateToISO = (date) => {
+  if (!date) return new Date().toISOString();
+  try {
+    const dateObj = new Date(date);
+    return isNaN(dateObj.getTime()) ? new Date().toISOString() : dateObj.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+};
+
 // GET /api/stats/dashboard - Получение статистики для дашборда
 router.get('/dashboard', async (req, res) => {
   try {
@@ -112,12 +123,12 @@ router.get('/dashboard', async (req, res) => {
       .lean();
 
     const upcomingEvents = upcomingEventsData.map(event => ({
-      title: event.title,
-      date: event.start_date.toISOString(),
-      participants: `${event.current_participants}/${event.max_participants || '∞'}`
+      title: event.title || 'Без названия',
+      date: safeDateToISO(event.start_date),
+      participants: `${event.current_participants || 0}/${event.max_participants || '∞'}`
     }));
 
-    // Получение последней активности
+    // Получение последней активности с безопасной обработкой
     const [recentLesson, recentPayment, recentEvent] = await Promise.all([
       Lesson.findOne({ isActive: true })
         .sort({ createdAt: -1 })
@@ -138,31 +149,39 @@ router.get('/dashboard', async (req, res) => {
 
     const recentActivity = [];
 
-    if (recentLesson && recentLesson.horse) {
+    // Безопасная обработка занятия
+    if (recentLesson) {
+      const horseName = recentLesson.horse?.name || 'неизвестная лошадь';
+      const memberName = recentLesson.member ?
+        `${recentLesson.member.first_name} ${recentLesson.member.last_name}` :
+        'Неизвестный пользователь';
+
       recentActivity.push({
         type: 'lesson',
-        message: `Новое занятие запланировано с ${recentLesson.horse.name}`,
-        user: recentLesson.member ? `${recentLesson.member.first_name} ${recentLesson.member.last_name}` : 'Неизвестный пользователь',
-        timestamp: recentLesson.createdAt.toISOString(),
+        message: `Новое занятие запланировано с ${horseName}`,
+        user: memberName,
+        timestamp: safeDateToISO(recentLesson.createdAt),
         color: 'green'
       });
     }
 
+    // Безопасная обработка платежа
     if (recentPayment && recentPayment.user) {
       recentActivity.push({
         type: 'payment',
         message: `Получен платеж от ${recentPayment.user.first_name} ${recentPayment.user.last_name}`,
-        amount: recentPayment.amount,
-        timestamp: recentPayment.payment_date.toISOString(),
+        amount: recentPayment.amount || 0,
+        timestamp: safeDateToISO(recentPayment.payment_date),
         color: 'blue'
       });
     }
 
+    // Безопасная обработка мероприятия
     if (recentEvent) {
       recentActivity.push({
         type: 'event',
-        message: `Создано мероприятие: ${recentEvent.title}`,
-        timestamp: recentEvent.createdAt.toISOString(),
+        message: `Создано мероприятие: ${recentEvent.title || 'Без названия'}`,
+        timestamp: safeDateToISO(recentEvent.createdAt),
         color: 'purple'
       });
     }
@@ -171,18 +190,18 @@ router.get('/dashboard', async (req, res) => {
     recentActivity.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     const statsData = {
-      totalHorses,
-      upcomingLessons,
-      activeEvents,
-      pendingPayments,
-      totalMembers,
-      monthlyRevenue,
-      newHorsesThisMonth,
-      newLessonsThisWeek,
-      newMembersThisMonth,
-      pendingPaymentsAmount,
-      revenueGrowthPercent,
-      upcomingEvents,
+      totalHorses: totalHorses || 0,
+      upcomingLessons: upcomingLessons || 0,
+      activeEvents: activeEvents || 0,
+      pendingPayments: pendingPayments || 0,
+      totalMembers: totalMembers || 0,
+      monthlyRevenue: monthlyRevenue || 0,
+      newHorsesThisMonth: newHorsesThisMonth || 0,
+      newLessonsThisWeek: newLessonsThisWeek || 0,
+      newMembersThisMonth: newMembersThisMonth || 0,
+      pendingPaymentsAmount: pendingPaymentsAmount || 0,
+      revenueGrowthPercent: revenueGrowthPercent || 0,
+      upcomingEvents: upcomingEvents || [],
       recentActivity: recentActivity.slice(0, 4)
     };
 
@@ -218,9 +237,9 @@ router.get('/overview', async (req, res) => {
     const totalRevenue = revenueResult[0]?.total || 0;
 
     const overviewData = {
-      newUsersLast30Days: users,
-      upcomingLessons: lessons,
-      totalRevenue
+      newUsersLast30Days: users || 0,
+      upcomingLessons: lessons || 0,
+      totalRevenue: totalRevenue || 0
     };
 
     res.json({

@@ -24,17 +24,36 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
- useEffect(() => {
-  const fetchStats = async () => {
-    try {
-      setError('')
-      // Используем get вместо getAll, так как endpoint возвращает один объект
-      const response = await apiClient.get<DashboardStats>('/stats/dashboard')
-      
-      if (response.success && response.data) {
-        setStats(response.data)
-      } else {
-        setError(response.message || 'Не удалось загрузить статистику')
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setError('')
+        // Используем get вместо getAll, так как endpoint возвращает один объект
+        const response = await apiClient.get<DashboardStats>('/stats/dashboard')
+
+        if (response.success && response.data) {
+          setStats(response.data)
+        } else {
+          setError(response.message || 'Не удалось загрузить статистику')
+          setStats({
+            totalHorses: 0,
+            upcomingLessons: 0,
+            activeEvents: 0,
+            pendingPayments: 0,
+            totalMembers: 0,
+            monthlyRevenue: 0,
+            newHorsesThisMonth: 0,
+            newLessonsThisWeek: 0,
+            newMembersThisMonth: 0,
+            pendingPaymentsAmount: 0,
+            revenueGrowthPercent: 0,
+            upcomingEvents: [],
+            recentActivity: []
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+        setError('Ошибка при загрузке данных')
         setStats({
           totalHorses: 0,
           upcomingLessons: 0,
@@ -50,32 +69,13 @@ const Dashboard: React.FC = () => {
           upcomingEvents: [],
           recentActivity: []
         })
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error)
-      setError('Ошибка при загрузке данных')
-      setStats({
-        totalHorses: 0,
-        upcomingLessons: 0,
-        activeEvents: 0,
-        pendingPayments: 0,
-        totalMembers: 0,
-        monthlyRevenue: 0,
-        newHorsesThisMonth: 0,
-        newLessonsThisWeek: 0,
-        newMembersThisMonth: 0,
-        pendingPaymentsAmount: 0,
-        revenueGrowthPercent: 0,
-        upcomingEvents: [],
-        recentActivity: []
-      })
-    } finally {
-      setLoading(false)
     }
-  }
 
-  fetchStats()
-}, [])
+    fetchStats()
+  }, [])
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('ru-RU', {
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
     const date = new Date(dateString)
     const now = new Date()
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
+
     if (diffInHours < 1) {
       return 'только что'
     } else if (diffInHours < 24) {

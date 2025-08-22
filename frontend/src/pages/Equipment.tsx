@@ -3,46 +3,31 @@ import { Search, Plus, Package, Wrench, Edit, Eye, Trash2, Archive, RotateCcw } 
 import { apiClient } from '../lib/api'
 import EquipmentForm from '../components/EquipmentForm'
 import EquipmentDetail from '../components/EquipmentDetail'
+import { Equipment as EquipmentType } from '../types/equipment' // Переименовываем импорт
 
-interface Equipment {
-  _id: string
-  name: string
-  category: 'saddle' | 'bridle' | 'halter' | 'blanket' | 'boot' | 'grooming' | 'other'
-  brand?: string
-  condition: 'excellent' | 'good' | 'fair' | 'poor'
-  assignedHorse?: {
-    name: string
-    breed: string
-  }
-  cost?: number
-  currentValue?: number
-  location?: string
-  lastMaintenance?: string
-  nextMaintenance?: string
-  isActive?: boolean
-}
-
-const Equipment: React.FC = () => {
-  const [equipment, setEquipment] = useState<Equipment[]>([])
+const EquipmentPage: React.FC = () => { // Изменяем имя компонента
+  const [equipment, setEquipment] = useState<EquipmentType[]>([]) // Используем переименованный тип
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null)
+  const [editingEquipment, setEditingEquipment] = useState<EquipmentType | null>(null)
   const [showEditForm, setShowEditForm] = useState(false)
-  const [viewingEquipment, setViewingEquipment] = useState<Equipment | null>(null)
+  const [viewingEquipment, setViewingEquipment] = useState<EquipmentType | null>(null)
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+  const [maintainingEquipment, setMaintainingEquipment] = useState<EquipmentType | null>(null)
+  const [showMaintenanceForm, setShowMaintenanceForm] = useState(false)
 
   useEffect(() => {
     const fetchEquipment = () => {
-      apiClient.getAll<{ success: boolean; data: Equipment[] }>('equipment')
+      apiClient.getAll<{ success: boolean; data: EquipmentType[] }>('equipment')
         .then(response => {
           if (response.success) {
             setEquipment(response.data)
           }
         })
         .catch(error => {
-          console.error('Failed to fetch equipment:', error)
+          console.error('Не удалось загрузить снаряжение:', error)
         })
         .finally(() => {
           setLoading(false)
@@ -53,40 +38,29 @@ const Equipment: React.FC = () => {
   }, [])
 
   const handleAddSuccess = () => {
-    // Refresh the equipment list
+    // Обновляем список снаряжения
     const fetchEquipment = () => {
-      apiClient.getAll<{ success: boolean; data: Equipment[] }>('equipment')
+      apiClient.getAll<{ success: boolean; data: EquipmentType[] }>('equipment')
         .then(response => {
           if (response.success) {
             setEquipment(response.data)
           }
         })
         .catch(error => {
-          console.error('Failed to fetch equipment:', error)
+          console.error('Не удалось загрузить снаряжение:', error)
         })
     }
     fetchEquipment()
   }
 
-  const handleEditEquipment = (equipment: Equipment) => {
+  const handleEditEquipment = (equipment: EquipmentType) => {
     setEditingEquipment(equipment)
     setShowEditForm(true)
   }
 
   const handleEditSuccess = () => {
-    // Refresh the equipment list
-    const fetchEquipment = () => {
-      apiClient.getAll<{ success: boolean; data: Equipment[] }>('equipment')
-        .then(response => {
-          if (response.success) {
-            setEquipment(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch equipment:', error)
-        })
-    }
-    fetchEquipment()
+    // Обновляем список снаряжения
+    handleAddSuccess()
     setEditingEquipment(null)
   }
 
@@ -95,7 +69,7 @@ const Equipment: React.FC = () => {
     setEditingEquipment(null)
   }
 
-  const handleViewEquipment = (equipment: Equipment) => {
+  const handleViewEquipment = (equipment: EquipmentType) => {
     setViewingEquipment(equipment)
     setShowDetailView(true)
   }
@@ -105,30 +79,43 @@ const Equipment: React.FC = () => {
     setViewingEquipment(null)
   }
 
-  const handleDeleteEquipment = async (equipment: Equipment) => {
+  const handleDeleteEquipment = async (equipment: EquipmentType) => {
     if (window.confirm(`Вы уверены, что хотите удалить снаряжение "${equipment.name}"? Это действие нельзя отменить.`)) {
       try {
         await apiClient.delete('equipment', equipment._id)
-        handleAddSuccess() // Refresh the list
+        handleAddSuccess() // Обновляем список
       } catch (error) {
-        console.error('Failed to delete equipment:', error)
+        console.error('Не удалось удалить снаряжение:', error)
         alert('Ошибка при удалении снаряжения')
       }
     }
   }
 
-  const handleArchiveEquipment = async (equipment: Equipment) => {
+  const handleArchiveEquipment = async (equipment: EquipmentType) => {
     if (window.confirm(`Вы уверены, что хотите ${equipment.isActive ? 'архивировать' : 'восстановить'} снаряжение "${equipment.name}"?`)) {
       try {
         await apiClient.update('equipment', equipment._id, { isActive: !equipment.isActive })
-        handleAddSuccess() // Refresh the list
+        handleAddSuccess() // Обновляем список
       } catch (error) {
-        console.error('Failed to archive/restore equipment:', error)
+        console.error('Не удалось архивировать/восстановить снаряжение:', error)
         alert('Ошибка при архивировании/восстановлении снаряжения')
       }
     }
   }
 
+  const handleMaintenanceEquipment = (equipment: EquipmentType) => {
+    setMaintainingEquipment(equipment)
+    setShowMaintenanceForm(true)
+  }
+
+  const handleMaintenanceSuccess = () => {
+    // Обновляем список снаряжения после обслуживания
+    handleAddSuccess()
+    setMaintainingEquipment(null)
+    setShowMaintenanceForm(false)
+  }
+
+  // Фильтрация оборудования по поисковому запросу и статусу архивации
   const filteredEquipment = equipment.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -188,15 +175,15 @@ const Equipment: React.FC = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск снаряжения..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск снаряжения..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
@@ -305,10 +292,17 @@ const Equipment: React.FC = () => {
                       <div className="flex space-x-2">
                         <button 
                           onClick={() => handleViewEquipment(item)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-indigo-600 hover:text-indigo-909"
                           title="Просмотр информации о снаряжении"
                         >
                           <Eye className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleMaintenanceEquipment(item)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Обслуживание снаряжения"
+                        >
+                          <Wrench className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => handleEditEquipment(item)}
@@ -356,6 +350,14 @@ const Equipment: React.FC = () => {
         mode="edit"
       />
 
+      <EquipmentForm
+        isOpen={showMaintenanceForm}
+        onClose={() => setShowMaintenanceForm(false)}
+        onSuccess={handleMaintenanceSuccess}
+        equipment={maintainingEquipment}
+        mode="maintenance"
+      />
+
       <EquipmentDetail
         isOpen={showDetailView}
         onClose={handleCloseDetailView}
@@ -365,4 +367,4 @@ const Equipment: React.FC = () => {
   )
 }
 
-export default Equipment
+export default EquipmentPage // Изменяем экспорт

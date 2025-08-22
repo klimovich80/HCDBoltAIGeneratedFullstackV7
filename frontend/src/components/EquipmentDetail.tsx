@@ -1,30 +1,6 @@
 import React from 'react'
 import { X, Calendar, Package, MapPin, DollarSign, FileText, Wrench } from 'lucide-react'
-
-interface Equipment {
-  _id: string
-  name: string
-  category: 'saddle' | 'bridle' | 'halter' | 'blanket' | 'boot' | 'grooming' | 'other'
-  brand?: string
-  model?: string
-  size?: string
-  condition: 'excellent' | 'good' | 'fair' | 'poor'
-  purchaseDate?: string
-  cost?: number
-  currentValue?: number
-  assignedHorse?: {
-    name: string
-    breed: string
-    age?: number
-  }
-  lastMaintenance?: string
-  nextMaintenance?: string
-  maintenanceNotes?: string
-  location?: string
-  notes?: string
-  createdAt?: string
-  updatedAt?: string
-}
+import { Equipment } from '../types/equipment'
 
 interface EquipmentDetailProps {
   isOpen: boolean
@@ -124,7 +100,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
 
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Equipment Information */}
+            {/* Информация о снаряжении */}
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Информация о снаряжении</h3>
@@ -171,7 +147,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
                 </div>
               </div>
 
-              {/* Financial Information */}
+              {/* Финансовая информация */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Финансовая информация</h3>
                 <div className="space-y-3">
@@ -201,7 +177,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
                 </div>
               </div>
 
-              {/* Assigned Horse */}
+              {/* Назначенная лошадь */}
               {equipment.assignedHorse && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Назначенная лошадь</h3>
@@ -209,18 +185,15 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
                     <div className="space-y-1">
                       <p className="text-gray-700 font-medium">{equipment.assignedHorse.name}</p>
                       <p className="text-sm text-gray-600">{equipment.assignedHorse.breed}</p>
-                      {equipment.assignedHorse.age && (
-                        <p className="text-sm text-gray-600">{equipment.assignedHorse.age} лет</p>
-                      )}
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Maintenance and Notes */}
+            {/* Обслуживание и заметки */}
             <div className="space-y-6">
-              {/* Maintenance Information */}
+              {/* Информация об обслуживании */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Wrench className="h-5 w-5 mr-2" />
@@ -242,7 +215,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
                 </div>
               </div>
 
-              {/* Maintenance Notes */}
+              {/* Заметки по обслуживанию */}
               {equipment.maintenanceNotes && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -255,7 +228,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
                 </div>
               )}
 
-              {/* General Notes */}
+              {/* Общие заметки */}
               {equipment.notes && (
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2 flex items-center">
@@ -270,7 +243,7 @@ const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equi
             </div>
           </div>
 
-          {/* Footer with timestamps */}
+          {/* Подвал с временными метками */}
           {(equipment.createdAt || equipment.updatedAt) && (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="flex justify-between text-sm text-gray-500">
