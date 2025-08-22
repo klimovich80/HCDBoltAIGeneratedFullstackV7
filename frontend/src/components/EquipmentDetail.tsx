@@ -1,12 +1,6 @@
 import React from 'react'
 import { X, Calendar, Package, MapPin, DollarSign, FileText, Wrench } from 'lucide-react'
-import { Equipment } from '../types/equipment'
-
-interface EquipmentDetailProps {
-  isOpen: boolean
-  onClose: () => void
-  equipment: Equipment | null
-}
+import { EquipmentDetailProps } from '../types/equipment'
 
 const EquipmentDetail: React.FC<EquipmentDetailProps> = ({ isOpen, onClose, equipment }) => {
   if (!isOpen || !equipment) return null

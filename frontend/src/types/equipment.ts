@@ -111,3 +111,9 @@ export interface EquipmentResponse {
   createdAt?: string
   updatedAt?: string
 }
+
+export interface EquipmentDetailProps {
+  isOpen: boolean
+  onClose: () => void
+  equipment: Equipment | null
+}

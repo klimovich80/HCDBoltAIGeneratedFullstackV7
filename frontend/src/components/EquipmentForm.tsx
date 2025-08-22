@@ -1,7 +1,24 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-import { Equipment, Horse, EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
+import { Horse, EquipmentFormData, EquipmentFormProps, MaintenanceData, EquipmentRequest } from '../types/equipment'
+
+// Вспомогательная функция для обработки ошибок
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  if (typeof error === 'string') {
+    return error;
+  }
+  
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  
+  return 'Произошла неизвестная ошибка';
+};
 
 const EquipmentForm: React.FC<EquipmentFormProps> = ({ 
   isOpen, 
@@ -153,10 +170,11 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
       onSuccess()
       onClose()
       setError('')
-    } catch (err: any) {
-      setError(err.message || `Не удалось ${mode === 'edit' ? 'отредактировать' : mode === 'maintenance' ? 'обслужить' : 'создать'} снаряжение`)
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
+      setError(`Не удалось ${mode === 'edit' ? 'отредактировать' : mode === 'maintenance' ? 'обслужить' : 'создать'} снаряжение: ${errorMessage}`);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -466,7 +484,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
               />
             </div>
 
-            {/* Поле общих заметок - Показывать только в режимах создания/редактирования */}
+            {/* Поле общих заметки - Показывать только в режимах создания/редактирования */}
             {mode !== 'maintenance' && (
               <div>
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">

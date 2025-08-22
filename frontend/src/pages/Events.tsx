@@ -3,25 +3,7 @@ import { Search, Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, Archive, Rota
 import { apiClient } from '../lib/api'
 import EventForm from '../components/EventForm'
 import EventDetail from '../components/EventDetail'
-
-interface Event {
-  _id: string
-  title: string
-  description: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
-  startDate: string
-  endDate: string
-  location?: string
-  maxParticipants?: number
-  registrationFee: number
-  organizer: {
-    first_name: string
-    last_name: string
-  }
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
-  participants: any[]
-  isActive?: boolean
-}
+import { Event, ApiResponse } from '../types/events'
 
 const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([])
@@ -36,7 +18,7 @@ const Events: React.FC = () => {
 
   useEffect(() => {
     const fetchEvents = () => {
-      apiClient.getAll<{ success: boolean; data: Event[] }>('events')
+      apiClient.getAll<ApiResponse<Event[]>>('events')
         .then(response => {
           if (response.success) {
             setEvents(response.data)
@@ -54,9 +36,8 @@ const Events: React.FC = () => {
   }, [])
 
   const handleAddSuccess = () => {
-    // Refresh the events list
     const fetchEvents = () => {
-      apiClient.getAll<{ success: boolean; data: Event[] }>('events')
+      apiClient.getAll<ApiResponse<Event[]>>('events')
         .then(response => {
           if (response.success) {
             setEvents(response.data)
@@ -75,9 +56,8 @@ const Events: React.FC = () => {
   }
 
   const handleEditSuccess = () => {
-    // Refresh the events list
     const fetchEvents = () => {
-      apiClient.getAll<{ success: boolean; data: Event[] }>('events')
+      apiClient.getAll<ApiResponse<Event[]>>('events')
         .then(response => {
           if (response.success) {
             setEvents(response.data)
@@ -110,7 +90,7 @@ const Events: React.FC = () => {
     if (window.confirm(`Вы уверены, что хотите удалить мероприятие "${event.title}"? Это действие нельзя отменить.`)) {
       try {
         await apiClient.delete('events', event._id)
-        handleAddSuccess() // Refresh the list
+        handleAddSuccess()
       } catch (error) {
         console.error('Failed to delete event:', error)
         alert('Ошибка при удалении мероприятия')
@@ -122,7 +102,7 @@ const Events: React.FC = () => {
     if (window.confirm(`Вы уверены, что хотите ${event.isActive ? 'архивировать' : 'восстановить'} мероприятие "${event.title}"?`)) {
       try {
         await apiClient.update('events', event._id, { isActive: !event.isActive })
-        handleAddSuccess() // Refresh the list
+        handleAddSuccess()
       } catch (error) {
         console.error('Failed to archive/restore event:', error)
         alert('Ошибка при архивировании/восстановлении мероприятия')
@@ -158,7 +138,7 @@ const Events: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('ru-RU', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -204,15 +184,15 @@ const Events: React.FC = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Поиск мероприятий..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Поиск мероприятий..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
                 <input
