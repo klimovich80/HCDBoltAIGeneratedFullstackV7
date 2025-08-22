@@ -50,13 +50,14 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
   const [horses, setHorses] = useState<Horse[]>([])
   const [loadingData, setLoadingData] = useState(true)
 
-  // Загрузка лошадей для назначения
+   // Загрузка лошадей для назначения
   useEffect(() => {
     const loadHorses = async () => {
       try {
         setLoadingData(true)
         
-        const horsesResponse = await apiClient.getAll<Horse[]>('horses')
+        // ИСПРАВЛЕНИЕ: Убрали лишние квадратные скобки из типа
+        const horsesResponse = await apiClient.getAll<Horse>('horses')
         if (horsesResponse.success) {
           setHorses(horsesResponse.data || [])
         }
