@@ -17,6 +17,7 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
   const [showArchived, setShowArchived] = useState(false)
   const [maintainingEquipment, setMaintainingEquipment] = useState<EquipmentType | null>(null)
   const [showMaintenanceForm, setShowMaintenanceForm] = useState(false)
+  const [managingPhotosFor, setManagingPhotosFor] = useState<EquipmentType | null>(null)
 
   useEffect(() => {
     const fetchEquipment = () => {

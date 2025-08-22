@@ -1,45 +1,6 @@
 import React from 'react'
 import { X, Calendar, Clock, User, Users as Horse, DollarSign, FileText } from 'lucide-react'
-
-// Интерфейс для урока
-interface Lesson {
-  _id: string
-  title: string
-  description?: string
-  instructor: {
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  horse?: {
-    name: string
-    breed: string
-    age?: number
-  }
-  member: {
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-// Интерфейс для пропсов компонента
-interface LessonDetailProps {
-  isOpen: boolean
-  onClose: () => void
-  lesson: Lesson | null
-}
+import { LessonDetailProps } from '../types/lesson'
 
 const LessonDetail: React.FC<LessonDetailProps> = ({ isOpen, onClose, lesson }) => {
   // Не отображать компонент, если он закрыт или урок не передан

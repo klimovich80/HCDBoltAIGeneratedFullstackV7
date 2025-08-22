@@ -3,43 +3,7 @@ import { Search, Plus, Calendar, Clock, User, Edit, Eye, Trash2, Archive, Rotate
 import { apiClient } from '../lib/api'
 import LessonForm from '../components/LessonForm'
 import LessonDetail from '../components/LessonDetail'
-
-// Унифицированный интерфейс Lesson (совместимый с LessonForm и LessonDetail)
-interface Lesson {
-  _id: string
-  title: string
-  description?: string
-  instructor: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  horse?: {
-    _id: string
-    name: string
-    breed: string
-    age?: number
-  }
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-  isActive?: boolean
-  createdAt?: string
-  updatedAt?: string
-}
+import { Lesson } from '../types/lesson'
 
 // Типы для статусов
 type LessonStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'

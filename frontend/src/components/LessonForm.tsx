@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { Horse } from '../types/horse'
+import { LessonFormData, LessonFormProps } from '../types/lesson'
 
 // Интерфейсы для типов данных
 interface ApiErrorResponse {
@@ -15,57 +16,6 @@ interface ExtendedError extends Error {
     data?: ApiErrorResponse;
   };
 }
-interface LessonFormData {
-  title: string
-  description?: string
-  instructor_id: string
-  horse_id?: string
-  member_id: string
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-}
-
-interface LessonFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  lesson?: Lesson | null
-  mode?: 'create' | 'edit'
-}
-
-interface Lesson {
-  _id: string
-  title: string
-  description?: string
-  instructor: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  horse?: {
-    _id: string
-    name: string
-    breed: string
-  }
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-}
-
 interface User {
   _id: string
   first_name: string

@@ -1,6 +1,6 @@
 // api.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-import { Horse } from "../types/horse";
+import { Lesson, LessonFormData } from "../types/lesson";
 
 // Интерфейсы для типов данных
 interface User {
@@ -10,24 +10,6 @@ interface User {
   email: string;
   role: 'admin' | 'trainer' | 'member' | 'guest';
   phone?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-interface Lesson {
-  _id: string;
-  title: string;
-  description?: string;
-  instructor: User;
-  horse?: Horse;
-  member: User;
-  scheduled_date: string;
-  duration_minutes: number;
-  lesson_type: 'private' | 'group' | 'training';
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-  cost: number;
-  payment_status: 'pending' | 'paid' | 'overdue';
-  notes?: string;
-  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -54,21 +36,6 @@ interface ServerResponse<T = unknown> {
   pagination?: Pagination;
   token?: string;
   user?: User;
-}
-
-interface LessonFormData {
-  title: string;
-  description?: string;
-  instructor_id: string;
-  horse_id?: string;
-  member_id: string;
-  scheduled_date: string;
-  duration_minutes: number;
-  lesson_type: 'private' | 'group' | 'training';
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show';
-  cost: number;
-  payment_status: 'pending' | 'paid' | 'overdue';
-  notes?: string;
 }
 
 class ApiClient {
