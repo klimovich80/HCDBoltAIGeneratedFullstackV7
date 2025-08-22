@@ -1,43 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-interface PaymentFormData {
-  user_id: string
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  description?: string
-}
-
-interface PaymentFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  payment?: Payment | null
-  mode?: 'create' | 'edit'
-}
-
-interface Payment {
-  _id: string
-  user: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-}
-
+import { PaymentFormData, PaymentFormProps } from '../types/payment'
 interface User {
   _id: string
   first_name: string

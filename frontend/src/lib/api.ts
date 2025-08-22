@@ -111,6 +111,35 @@ class ApiClient {
     }
   }
 
+  async upload<T>(endpoint: string, formData: FormData): Promise<ServerResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          ...(this.token && { Authorization: `Bearer ${this.token}` }),
+          // Не устанавливаем Content-Type, чтобы браузер сам установил с boundary
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        success: data.success !== undefined ? data.success : true,
+        data: data.data !== undefined ? data.data : data,
+        message: data.message,
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
+  }
+
   // Методы аутентификации
   async login(email: string, password: string): Promise<AuthResponse> {
     try {

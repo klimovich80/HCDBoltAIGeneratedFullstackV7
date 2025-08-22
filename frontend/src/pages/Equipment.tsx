@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, Package, Wrench, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
+import { Search, Plus, Package, Wrench, Edit, Eye, Trash2, Archive, RotateCcw, Image } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import EquipmentForm from '../components/EquipmentForm'
 import EquipmentDetail from '../components/EquipmentDetail'
-import { Equipment as EquipmentType } from '../types/equipment' // Переименовываем импорт
+import EquipmentPhotos from '../components/EquipmentPhotos'
+import { Equipment as EquipmentType } from '../types/equipment'
 
-const EquipmentPage: React.FC = () => { // Изменяем имя компонента
-  const [equipment, setEquipment] = useState<EquipmentType[]>([]) // Используем переименованный тип
+const Equipment: React.FC = () => {
+  const [equipment, setEquipment] = useState<EquipmentType[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -21,10 +22,10 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
 
   useEffect(() => {
     const fetchEquipment = () => {
-      apiClient.getAll<{ success: boolean; data: EquipmentType[] }>('equipment')
+      apiClient.getAll<EquipmentType>('equipment')
         .then(response => {
           if (response.success) {
-            setEquipment(response.data)
+            setEquipment(response.data || [])
           }
         })
         .catch(error => {
@@ -41,10 +42,10 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
   const handleAddSuccess = () => {
     // Обновляем список снаряжения
     const fetchEquipment = () => {
-      apiClient.getAll<{ success: boolean; data: EquipmentType[] }>('equipment')
+      apiClient.getAll<EquipmentType>('equipment')
         .then(response => {
           if (response.success) {
-            setEquipment(response.data)
+            setEquipment(response.data || [])
           }
         })
         .catch(error => {
@@ -114,6 +115,15 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
     handleAddSuccess()
     setMaintainingEquipment(null)
     setShowMaintenanceForm(false)
+  }
+
+  const handleManagePhotos = (equipment: EquipmentType) => {
+    setManagingPhotosFor(equipment)
+  }
+
+  const handlePhotosUpdate = () => {
+    // Обновляем список снаряжения после изменения фотографий
+    handleAddSuccess()
   }
 
   // Фильтрация оборудования по поисковому запросу и статусу архивации
@@ -204,6 +214,9 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Фото
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Снаряжение
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -229,8 +242,34 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredEquipment.map((item) => {
                 const CategoryIcon = getCategoryIcon(item.category)
+                const primaryPhoto = item.photos?.find(p => p.isPrimary)
+                
                 return (
                   <tr key={item._id} className={`hover:bg-gray-50 ${item.isActive === false ? 'opacity-60 bg-gray-50' : ''}`}>
+                    {/* Ячейка с фото */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {primaryPhoto ? (
+                          <img
+                            src={primaryPhoto.url}
+                            alt={item.name}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <Image className="h-5 w-5 text-gray-400" />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleManagePhotos(item)}
+                          className="ml-2 p-1 text-gray-500 hover:text-indigo-600"
+                          title="Управление фотографиями"
+                        >
+                          <Image className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                    
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <CategoryIcon className="h-5 w-5 text-gray-400 mr-3" />
@@ -293,7 +332,7 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
                       <div className="flex space-x-2">
                         <button 
                           onClick={() => handleViewEquipment(item)}
-                          className="text-indigo-600 hover:text-indigo-909"
+                          className="text-indigo-600 hover:text-indigo-900"
                           title="Просмотр информации о снаряжении"
                         >
                           <Eye className="h-4 w-4" />
@@ -363,9 +402,20 @@ const EquipmentPage: React.FC = () => { // Изменяем имя компон�
         isOpen={showDetailView}
         onClose={handleCloseDetailView}
         equipment={viewingEquipment}
+        onUpdate={handleAddSuccess}
       />
+
+      {/* Модальное окно управления фотографиями */}
+      {managingPhotosFor && (
+        <EquipmentPhotos
+          equipment={managingPhotosFor}
+          onUpdate={handlePhotosUpdate}
+          isOpen={!!managingPhotosFor}
+          onClose={() => setManagingPhotosFor(null)}
+        />
+      )}
     </div>
   )
 }
 
-export default EquipmentPage // Изменяем экспорт
+export default Equipment

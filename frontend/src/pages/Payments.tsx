@@ -1,28 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, DollarSign, Calendar, User, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
+import { Search, Plus, DollarSign, Calendar, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import PaymentForm from '../components/PaymentForm'
 import PaymentDetail from '../components/PaymentDetail'
-
-interface Payment {
-  _id: string
-  user: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-  }
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-  createdAt?: string
-  isActive?: boolean
-}
+import { Payment } from '../types/payment'
 
 const Payments: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([])

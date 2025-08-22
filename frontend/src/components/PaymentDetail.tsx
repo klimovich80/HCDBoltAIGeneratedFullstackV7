@@ -1,32 +1,6 @@
 import React from 'react'
 import { X, Calendar, DollarSign, User, FileText, CreditCard } from 'lucide-react'
-
-interface Payment {
-  _id: string
-  user: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-  createdAt?: string
-  updatedAt?: string
-}
-
-interface PaymentDetailProps {
-  isOpen: boolean
-  onClose: () => void
-  payment: Payment | null
-}
+import { PaymentDetailProps } from '../types/payment'
 
 const PaymentDetail: React.FC<PaymentDetailProps> = ({ isOpen, onClose, payment }) => {
   if (!isOpen || !payment) return null
