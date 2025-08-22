@@ -72,3 +72,5 @@
 {"level":"info","message":"Login attempt for user: yulia@example.com","service":"equestrian-crm","timestamp":"2025-08-20T04:57:42.444Z"}
 {"level":"info","message":"User logged in successfully: yulia@example.com","service":"equestrian-crm","timestamp":"2025-08-20T04:57:43.143Z"}
 {"level":"info","message":"::1 - - [20/Aug/2025:04:57:43 +0000] \"POST /api/auth/login HTTP/1.1\" 200 362 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36\"","service":"equestrian-crm","timestamp":"2025-08-20T04:57:43.375Z"}
+{"level":"info","message":"Сервер запущен на порту 5000","service":"equestrian-crm","timestamp":"2025-08-22T15:05:11.210Z"}
+{"level":"info","message":"MongoDB подключен успешно","service":"equestrian-crm","timestamp":"2025-08-22T15:05:11.261Z"}
