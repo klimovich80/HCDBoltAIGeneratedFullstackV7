@@ -1,28 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Plus, DollarSign, Calendar, User, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
+import { Search, Plus, DollarSign, Calendar, Edit, Eye, Trash2, Archive, RotateCcw } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import PaymentForm from '../components/PaymentForm'
 import PaymentDetail from '../components/PaymentDetail'
-
-interface Payment {
-  _id: string
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-  }
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'transfer' | 'check'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-  createdAt?: string
-  isActive?: boolean
-}
+import { Payment } from '../types/payment'
 
 const Payments: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([])
@@ -35,110 +16,29 @@ const Payments: React.FC = () => {
   const [showDetailView, setShowDetailView] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
-  useEffect(() => {
-    const fetchPayments = () => {
-      apiClient.getAll<{ success: boolean; data: Payment[] }>('payments')
-        .then(response => {
-          if (response.success) {
-            setPayments(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch payments:', error)
-          // Устанавливаем демо данные для разработки
-          setPayments([
-            {
-              _id: '1',
-              member: { _id: '1', first_name: 'Emma', last_name: 'Williams', email: 'emma@email.com' },
-              amount: 340,
-              payment_type: 'boarding',
-              payment_method: 'card',
-              status: 'paid',
-              due_date: '2024-12-01T00:00:00Z',
-              paid_date: '2024-11-28T00:00:00Z',
-              invoice_number: 'INV-2024-001',
-              description: 'Monthly boarding fee for Thunder',
-              createdAt: '2024-11-28T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '2',
-              member: { _id: '2', first_name: 'James', last_name: 'Brown', email: 'james@email.com' },
-              amount: 85,
-              payment_type: 'lesson',
-              payment_method: 'cash',
-              status: 'paid',
-              due_date: '2024-12-19T00:00:00Z',
-              paid_date: '2024-12-19T00:00:00Z',
-              invoice_number: 'INV-2024-002',
-              description: 'Private lesson with Sarah',
-              createdAt: '2024-12-19T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '3',
-              member: { _id: '3', first_name: 'Sophie', last_name: 'Davis', email: 'sophie@email.com' },
-              amount: 420,
-              payment_type: 'boarding',
-              payment_method: 'transfer',
-              status: 'pending',
-              due_date: '2024-12-01T00:00:00Z',
-              invoice_number: 'INV-2024-003',
-              description: 'Monthly boarding fee for Star',
-              createdAt: '2024-11-25T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '4',
-              member: { _id: '4', first_name: 'Robert', last_name: 'Wilson', email: 'robert@email.com' },
-              amount: 45,
-              payment_type: 'event',
-              payment_method: 'card',
-              status: 'paid',
-              due_date: '2024-12-28T00:00:00Z',
-              paid_date: '2024-12-15T00:00:00Z',
-              invoice_number: 'INV-2024-004',
-              description: 'Winter Dressage Competition registration',
-              createdAt: '2024-12-15T00:00:00Z',
-              isActive: true
-            },
-            {
-              _id: '5',
-              member: { _id: '5', first_name: 'Lisa', last_name: 'Anderson', email: 'lisa@email.com' },
-              amount: 150,
-              payment_type: 'membership',
-              payment_method: 'transfer',
-              status: 'overdue',
-              due_date: '2024-11-15T00:00:00Z',
-              invoice_number: 'INV-2024-005',
-              description: 'Annual membership renewal',
-              createdAt: '2024-11-10T00:00:00Z',
-              isActive: true
-            }
-          ])
-        })
-        .finally(() => {
-          setLoading(false)
-        })
+  const fetchPayments = async () => {
+    try {
+      const response = await apiClient.getAll<Payment[]>('payments')
+      if (response.success && response.data) {
+        setPayments(response.data)
+      } else {
+        setPayments([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch payments:', error)
+      setPayments([])
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchPayments()
   }, [])
 
   const handleAddSuccess = () => {
-    // Refresh the payments list
-    const fetchPayments = () => {
-      apiClient.getAll<{ success: boolean; data: Payment[] }>('payments')
-        .then(response => {
-          if (response.success) {
-            setPayments(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch payments:', error)
-        })
-    }
     fetchPayments()
+    setShowAddForm(false)
   }
 
   const handleEditPayment = (payment: Payment) => {
@@ -147,19 +47,8 @@ const Payments: React.FC = () => {
   }
 
   const handleEditSuccess = () => {
-    // Refresh the payments list
-    const fetchPayments = () => {
-      apiClient.getAll<{ success: boolean; data: Payment[] }>('payments')
-        .then(response => {
-          if (response.success) {
-            setPayments(response.data)
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch payments:', error)
-        })
-    }
     fetchPayments()
+    setShowEditForm(false)
     setEditingPayment(null)
   }
 
@@ -179,10 +68,14 @@ const Payments: React.FC = () => {
   }
 
   const handleDeletePayment = async (payment: Payment) => {
-    if (window.confirm(`Вы уверены, что хотите удалить платеж "${payment.invoice_number || payment.description}"? Это действие нельзя отменить.`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить платеж "${payment.invoice_number || 'без номера'}"? Это действие нельзя отменить.`)) {
       try {
-        await apiClient.delete('payments', payment._id)
-        handleAddSuccess() // Refresh the list
+        const response = await apiClient.delete('payments', payment._id)
+        if (response.success) {
+          await fetchPayments()
+        } else {
+          alert(response.message || 'Ошибка при удалении платежа')
+        }
       } catch (error) {
         console.error('Failed to delete payment:', error)
         alert('Ошибка при удалении платежа')
@@ -191,10 +84,14 @@ const Payments: React.FC = () => {
   }
 
   const handleArchivePayment = async (payment: Payment) => {
-    if (window.confirm(`Вы уверены, что хотите ${payment.isActive ? 'архивировать' : 'восстановить'} платеж "${payment.invoice_number || payment.description}"?`)) {
+    if (window.confirm(`Вы уверены, что хотите ${payment.isActive ? 'архивировать' : 'восстановить'} платеж "${payment.invoice_number || 'без номера'}"?`)) {
       try {
-        await apiClient.update('payments', payment._id, { isActive: !payment.isActive })
-        handleAddSuccess() // Refresh the list
+        const response = await apiClient.update('payments', payment._id, { isActive: !payment.isActive })
+        if (response.success) {
+          await fetchPayments()
+        } else {
+          alert(response.message || 'Ошибка при обновлении платежа')
+        }
       } catch (error) {
         console.error('Failed to archive/restore payment:', error)
         alert('Ошибка при архивировании/восстановлении платежа')
@@ -203,8 +100,8 @@ const Payments: React.FC = () => {
   }
 
   const filteredPayments = payments.filter(payment =>
-    payment.member.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.member.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    payment.user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     payment.payment_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (payment.invoice_number && payment.invoice_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (payment.description && payment.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -257,23 +154,31 @@ const Payments: React.FC = () => {
     switch (method) {
       case 'cash': return 'Наличные'
       case 'card': return 'Карта'
-      case 'transfer': return 'Перевод'
-      case 'check': return 'Чек'
+      case 'bank_transfer': return 'Банковский перевод'
+      case 'online': return 'Онлайн оплата'
       default: return method
     }
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ru-RU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    })
+    try {
+      const date = new Date(dateString)
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })
+    } catch {
+      return 'Неверная дата'
+    }
   }
 
   const formatCurrency = (amount: number) => {
-    return `${amount.toLocaleString()}₽`
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 0
+    }).format(amount)
   }
 
   if (loading) {
@@ -379,15 +284,15 @@ const Payments: React.FC = () => {
                     <div className="flex items-center">
                       <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center mr-3">
                         <span className="text-white text-xs font-medium">
-                          {payment.member.first_name[0]}{payment.member.last_name[0]}
+                          {payment.user.first_name[0]}{payment.user.last_name[0]}
                         </span>
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {payment.member.first_name} {payment.member.last_name}
+                          {payment.user.first_name} {payment.user.last_name}
                         </div>
-                        {payment.member.email && (
-                          <div className="text-sm text-gray-500">{payment.member.email}</div>
+                        {payment.user.email && (
+                          <div className="text-sm text-gray-500">{payment.user.email}</div>
                         )}
                       </div>
                     </div>

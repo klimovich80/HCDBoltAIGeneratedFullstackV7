@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Users as Horse, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -8,26 +9,46 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const { login } = useAuth()
+  const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const isValid = emailRegex.test(email)
+    setEmailError(isValid ? '' : 'Некорректный формат email')
+    return isValid
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEmail(value)
+    if (value) {
+      validateEmail(value)
+    } else {
+      setEmailError('')
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateEmail(email)) {
+      return
+    }
+    
     setLoading(true)
     setError('')
 
-    login(email, password)
-<<<<<<< HEAD
-      .then(() => {
-        console.log('Login.tsx: Login successful')
-      })
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-      .catch(err => {
-        setError('Invalid email or password: ' + err.message)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    try {
+      await login(email, password)
+      navigate('/dashboard')
+    } catch (err) {
+      console.error('Login error:', err)
+      setError(err instanceof Error ? err.message : 'Неверный email или пароль')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -57,11 +78,19 @@ const Login: React.FC = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:z-10 sm:text-sm ${
+                  emailError 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                }`}
                 placeholder="Адрес электронной почты"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                disabled={loading}
               />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-600">{emailError}</p>
+              )}
             </div>
             <div className="relative">
               <label htmlFor="password" className="sr-only">
@@ -77,11 +106,15 @@ const Login: React.FC = () => {
                 placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
               <button
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                aria-pressed={showPassword}
+                disabled={loading}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4 text-gray-400" />
@@ -93,25 +126,35 @@ const Login: React.FC = () => {
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center">Неверный email или пароль</div>
+            <div className="text-red-600 text-sm text-center p-2 bg-red-50 rounded-md border border-red-100">
+              {error}
+            </div>
           )}
 
           <div>
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || !!emailError}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Вход...
+                </span>
+              ) : 'Войти'}
             </button>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Демо данные:</h3>
-            <p className="text-xs text-blue-700">
-              Email: <strong>admin@example.com</strong><br />
-              Пароль: <strong>password123</strong>
-            </p>
+            <div className="text-xs text-blue-700 space-y-1">
+              <p>Email: <strong>admin@example.com</strong></p>
+              <p>Пароль: <strong>password123</strong></p>
+            </div>
           </div>
         </form>
       </div>

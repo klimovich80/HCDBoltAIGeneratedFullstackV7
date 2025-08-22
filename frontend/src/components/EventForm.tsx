@@ -1,46 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-interface EventFormData {
-  title: string
-  description?: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
-  startDate: string
-  endDate: string
-  location?: string
-  maxParticipants?: number
-  registrationFee: number
-  requirements?: string
-}
-
-interface EventFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  event?: Event | null
-  mode?: 'create' | 'edit'
-}
-
-interface Event {
-  _id: string
-  title: string
-  description?: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
-  startDate: string
-  endDate: string
-  location?: string
-  maxParticipants?: number
-  registrationFee: number
-  organizer: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
-  requirements?: string
-  participants: any[]
-}
+import { EventFormData, EventFormProps } from '../types/events'
 
 const EventForm: React.FC<EventFormProps> = ({ 
   isOpen, 
@@ -68,7 +29,7 @@ const EventForm: React.FC<EventFormProps> = ({
     if (event && mode === 'edit') {
       const startDate = new Date(event.startDate)
       const endDate = new Date(event.endDate)
-      const formattedStartDate = startDate.toISOString().slice(0, 16) // Format for datetime-local input
+      const formattedStartDate = startDate.toISOString().slice(0, 16)
       const formattedEndDate = endDate.toISOString().slice(0, 16)
       
       setFormData({
@@ -85,7 +46,7 @@ const EventForm: React.FC<EventFormProps> = ({
     } else if (mode === 'create') {
       // Reset form for create mode
       const now = new Date()
-      now.setMinutes(now.getMinutes() - now.getTimezoneOffset()) // Adjust for timezone
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
       const tomorrow = new Date(now)
       tomorrow.setDate(tomorrow.getDate() + 1)
       

@@ -1,25 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect} from 'react'
 import { apiClient } from '../lib/api'
-
-interface User {
-<<<<<<< HEAD
-  _id: string
-=======
-  id: string
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-  first_name: string
-  last_name: string
-  email: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  profileImage?: string
-}
-
-interface AuthContextType {
-  user: User | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
-  loading: boolean
-}
+import { User } from '../types/user'
+import { AuthContextType, AuthProviderProps } from '../types/authContext'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -31,63 +13,63 @@ export const useAuth = () => {
   return context
 }
 
-interface AuthProviderProps {
-  children: ReactNode
-}
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const initAuth = () => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        apiClient.setToken(token)
-        apiClient.getCurrentUser()
-          .then(userData => {
-<<<<<<< HEAD
-            console.log('User data:', userData)
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-            setUser(userData)
-          })
-          .catch(error => {
-            console.error('Failed to get user:', error)
-            localStorage.removeItem('token')
-          })
-          .finally(() => {
-            setLoading(false)
-          })
-      } else {
+ // В AuthProvider
+useEffect(() => {
+  const initAuth = async () => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      apiClient.setToken(token)
+      try {
+        const response = await apiClient.getCurrentUser()
+        if (response.success) {
+          setUser(response.data || response.user || null)
+        } else {
+          localStorage.removeItem('token')
+          apiClient.setToken(null)
+        }
+      } catch (error) {
+        console.error('Failed to get user:', error)
+        localStorage.removeItem('token')
+        apiClient.setToken(null)
+      } finally {
         setLoading(false)
       }
+    } else {
+      setLoading(false)
     }
+  }
 
-    initAuth()
-  }, [])
+  initAuth()
+}, [])
 
-  const login = (email: string, password: string): Promise<void> => {
-    return apiClient.login(email, password)
-      .then(response => {
-<<<<<<< HEAD
-        console.log('AuthContext successfull Login response:', response)
-=======
->>>>>>> fa859d18cc2c9a6f99585199b9833dd2dac442d4
-        if (response.success && response.user) {
-          setUser(response.user)
+  const login = async (email: string, password: string): Promise<void> => {
+    try {
+      const response = await apiClient.login(email, password)
+      
+      if (response.success) {
+        // Правильное извлечение пользователя из ответа
+        const user = response.user || (response as any).data?.user
+        if (user) {
+          setUser(user)
         } else {
-          throw new Error(response.message || 'Login failed')
+          throw new Error('User data not found in response')
         }
-      })
-      .catch(error => {
-        console.error('Login error:', error)
-        throw error
-      })
+      } else {
+        throw new Error(response.message || 'Login failed')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
   }
 
   const logout = () => {
-    apiClient.logout()
+    apiClient.setToken(null)
+    localStorage.removeItem('token')
     setUser(null)
   }
 

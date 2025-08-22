@@ -1,11 +1,7 @@
-import React, { ReactNode } from 'react'
+import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-
-interface ProtectedRouteProps {
-  children: ReactNode
-  requiredRole?: 'admin' | 'trainer' | 'member' | 'guest'
-}
+import { ProtectedRouteProps } from '../types/protectedRoutes'
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
   const { user, loading } = useAuth()

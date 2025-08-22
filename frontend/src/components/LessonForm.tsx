@@ -1,82 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-// Интерфейсы для типов данных
-interface ApiErrorResponse {
-  message?: string;
-  success?: boolean;
-  errors?: string[];
-}
-
-interface ExtendedError extends Error {
-  response?: Response & {
-    data?: ApiErrorResponse;
-  };
-}
-interface LessonFormData {
-  title: string
-  description?: string
-  instructor_id: string
-  horse_id?: string
-  member_id: string
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-}
-
-interface LessonFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  lesson?: Lesson | null
-  mode?: 'create' | 'edit'
-}
-
-interface Lesson {
-  _id: string
-  title: string
-  description?: string
-  instructor: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  horse?: {
-    _id: string
-    name: string
-    breed: string
-  }
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-}
-
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  role: string
-}
-
-interface Horse {
-  _id: string
-  name: string
-  breed: string
-}
+import { Horse } from '../types/horse'
+import { LessonFormData, LessonFormProps } from '../types/lesson'
+import { User } from '../types/user'
+import { ExtendedError} from '../types/api'
 
 const LessonForm: React.FC<LessonFormProps> = ({
   isOpen,
@@ -136,21 +64,6 @@ const LessonForm: React.FC<LessonFormProps> = ({
         }
       } catch (error) {
         console.error('Не удалось загрузить данные:', error)
-        // Установка демонстрационных данных для разработки
-        setInstructors([
-          { _id: '1', first_name: 'Сара', last_name: 'Джонсон', role: 'trainer' },
-          { _id: '2', first_name: 'Майкл', last_name: 'Чен', role: 'trainer' }
-        ])
-        setMembers([
-          { _id: '3', first_name: 'Эмма', last_name: 'Уильямс', role: 'member' },
-          { _id: '4', first_name: 'Джеймс', last_name: 'Браун', role: 'member' },
-          { _id: '5', first_name: 'Софи', last_name: 'Дэвис', role: 'member' }
-        ])
-        setHorses([
-          { _id: '1', name: 'Гром', breed: 'Т thoroughbred' },
-          { _id: '2', name: 'Лунный свет', breed: 'Арабская' },
-          { _id: '3', name: 'Звезда', breed: 'Квотер хорс' }
-        ])
       } finally {
         setLoadingData(false)
       }
@@ -216,8 +129,6 @@ const handleSubmit = async (e: React.FormEvent): Promise<void> => {
   setError('')
 
   try {
-    console.log('Отправка данных формы:', formData)
-
     // Проверка обязательных полей
     if (!formData.title.trim()) {
       throw new Error('Название урока обязательно')

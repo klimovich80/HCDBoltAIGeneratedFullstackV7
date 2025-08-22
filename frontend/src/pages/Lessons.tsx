@@ -3,43 +3,7 @@ import { Search, Plus, Calendar, Clock, User, Edit, Eye, Trash2, Archive, Rotate
 import { apiClient } from '../lib/api'
 import LessonForm from '../components/LessonForm'
 import LessonDetail from '../components/LessonDetail'
-
-// Унифицированный интерфейс Lesson (совместимый с LessonForm и LessonDetail)
-interface Lesson {
-  _id: string
-  title: string
-  description?: string
-  instructor: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  horse?: {
-    _id: string
-    name: string
-    breed: string
-    age?: number
-  }
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  scheduled_date: string
-  duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
-  cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
-  notes?: string
-  isActive?: boolean
-  createdAt?: string
-  updatedAt?: string
-}
+import { Lesson } from '../types/lesson'
 
 // Типы для статусов
 type LessonStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
@@ -86,52 +50,6 @@ const Lessons: React.FC = () => {
         }
       } catch (error: unknown) {
         console.error('Failed to fetch lessons:', error)
-        // Устанавливаем демо данные для разработки
-        setLessons([
-          {
-            _id: '1',
-            title: 'Beginner Riding Lesson',
-            description: '',
-            instructor: { _id: '1', first_name: 'Sarah', last_name: 'Johnson' },
-            horse: { _id: '1', name: 'Spirit', breed: 'Mustang' },
-            member: { _id: '2', first_name: 'Emma', last_name: 'Williams' },
-            scheduled_date: '2024-12-20T10:00:00Z',
-            duration_minutes: 60,
-            lesson_type: 'private',
-            status: 'scheduled',
-            cost: 85,
-            payment_status: 'pending'
-          },
-          {
-            _id: '2',
-            title: 'Advanced Dressage',
-            description: '',
-            instructor: { _id: '2', first_name: 'Michael', last_name: 'Chen' },
-            horse: { _id: '2', name: 'Thunder', breed: 'Thoroughbred' },
-            member: { _id: '3', first_name: 'Sophie', last_name: 'Davis' },
-            scheduled_date: '2024-12-20T14:00:00Z',
-            duration_minutes: 90,
-            lesson_type: 'private',
-            status: 'scheduled',
-            cost: 120,
-            payment_status: 'paid'
-          },
-          {
-            _id: '3',
-            title: 'Group Trail Ride',
-            description: '',
-            instructor: { _id: '1', first_name: 'Sarah', last_name: 'Johnson' },
-            horse: { _id: '3', name: 'Star', breed: 'Quarter Horse' },
-            member: { _id: '4', first_name: 'James', last_name: 'Brown' },
-            scheduled_date: '2024-12-21T09:00:00Z',
-            duration_minutes: 120,
-            lesson_type: 'group',
-            status: 'scheduled',
-            cost: 65,
-            payment_status: 'pending',
-            isActive: true
-          }
-        ])
       } finally {
         setLoading(false)
       }

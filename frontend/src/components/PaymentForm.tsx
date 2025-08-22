@@ -1,50 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-interface PaymentFormData {
-  member_id: string
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'transfer' | 'check'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-}
-
-interface PaymentFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  payment?: Payment | null
-  mode?: 'create' | 'edit'
-}
-
-interface Payment {
-  _id: string
-  member: {
-    _id: string
-    first_name: string
-    last_name: string
-  }
-  amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'transfer' | 'check'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
-  due_date: string
-  paid_date?: string
-  invoice_number?: string
-  description?: string
-}
-
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  role: string
-}
+import { PaymentFormData, PaymentFormProps } from '../types/payment'
+import { User } from '../types/user'
 
 const PaymentForm: React.FC<PaymentFormProps> = ({ 
   isOpen, 
@@ -54,14 +12,13 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   mode = 'create' 
 }) => {
   const [formData, setFormData] = useState<PaymentFormData>({
-    member_id: '',
+    user_id: '',
     amount: 0,
     payment_type: 'lesson',
     payment_method: 'cash',
     status: 'pending',
     due_date: '',
     paid_date: '',
-    invoice_number: '',
     description: ''
   })
   const [loading, setLoading] = useState(false)
@@ -75,18 +32,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       try {
         setLoadingData(true)
         
-        const membersResponse = await apiClient.getAll<{ success: boolean; data: User[] }>('users', { role: 'member' })
-        if (membersResponse.success) {
+        const membersResponse = await apiClient.getAll<User[]>('users', { role: 'member' })
+        if (membersResponse.success && membersResponse.data) {
           setMembers(membersResponse.data)
+        } else {
+          // Fallback demo data
         }
       } catch (error) {
         console.error('Failed to load members:', error)
-        // Set demo data for development
-        setMembers([
-          { _id: '1', first_name: 'Emma', last_name: 'Williams', role: 'member' },
-          { _id: '2', first_name: 'James', last_name: 'Brown', role: 'member' },
-          { _id: '3', first_name: 'Sophie', last_name: 'Davis', role: 'member' }
-        ])
       } finally {
         setLoadingData(false)
       }
@@ -104,29 +57,28 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       const paidDate = payment.paid_date ? new Date(payment.paid_date).toISOString().slice(0, 10) : ''
       
       setFormData({
-        member_id: payment.member._id,
+        user_id: payment.user._id,
         amount: payment.amount,
         payment_type: payment.payment_type,
         payment_method: payment.payment_method,
         status: payment.status,
         due_date: dueDate,
         paid_date: paidDate,
-        invoice_number: payment.invoice_number || '',
         description: payment.description || ''
       })
     } else if (mode === 'create') {
       // Reset form for create mode
       const today = new Date().toISOString().slice(0, 10)
+      const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       
       setFormData({
-        member_id: '',
+        user_id: '',
         amount: 0,
         payment_type: 'lesson',
         payment_method: 'cash',
         status: 'pending',
-        due_date: today,
+        due_date: nextWeek,
         paid_date: '',
-        invoice_number: '',
         description: ''
       })
     }
@@ -138,40 +90,70 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     setError('')
 
     try {
-      // Clean data for API
-      const cleanedData = {
-        ...formData,
+      // Валидация данных
+      if (!formData.user_id) {
+        throw new Error('Выберите участника')
+      }
+
+      if (formData.amount <= 0) {
+        throw new Error('Сумма платежа должна быть положительной')
+      }
+
+      if (!formData.due_date) {
+        throw new Error('Укажите срок оплаты')
+      }
+
+      // Подготовка данных для API
+      const apiData = {
+        user_id: formData.user_id,
+        amount: formData.amount,
+        payment_type: formData.payment_type,
+        payment_method: formData.payment_method,
+        status: formData.status,
+        due_date: formData.due_date,
         paid_date: formData.paid_date || undefined,
-        invoice_number: formData.invoice_number || undefined,
         description: formData.description || undefined
       }
 
       if (mode === 'edit' && payment) {
-        await apiClient.update('payments', payment._id, cleanedData)
+        await apiClient.update('payments', payment._id, apiData)
       } else {
-        await apiClient.create('payments', cleanedData)
+        await apiClient.create('payments', apiData)
       }
 
       onSuccess()
       onClose()
-      setError('')
     } catch (err: any) {
-      setError(err.message || `Failed to ${mode} payment`)
+      setError(err.message || `Ошибка при ${mode === 'edit' ? 'сохранении' : 'создании'} платежа`)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const { name, value, type } = e.target
+  
+  if (name === 'amount') {
+    // Специальная обработка для поля суммы
+    const numericValue = value.replace(/\D/g, '');
+    const numberValue = numericValue === '' ? 0 : parseInt(numericValue, 10);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'amount' 
-        ? parseFloat(value) || 0 
-        : value
-    }))
+      [name]: numberValue
+    }));
+  } else {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   }
 
+  if (name === 'status' && value === 'paid' && !formData.paid_date) {
+    const today = new Date().toISOString().slice(0, 10);
+    setFormData(prev => ({ ...prev, paid_date: today }));
+  }
+}
   if (!isOpen) return null
 
   return (
@@ -204,14 +186,14 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="member_id" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="user_id" className="block text-sm font-medium text-gray-700 mb-2">
                   Участник *
                 </label>
                 <select
-                  id="member_id"
-                  name="member_id"
+                  id="user_id"
+                  name="user_id"
                   required
-                  value={formData.member_id}
+                  value={formData.user_id}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
@@ -228,17 +210,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-2">
                   Сумма (₽) *
                 </label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    id="amount"
+                    name="amount"
+                    required
+                    value={formData.amount === 0 ? '' : formData.amount.toLocaleString('ru-RU')}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="0"
+                  />
               </div>
 
               <div>
@@ -276,8 +258,8 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                 >
                   <option value="cash">Наличные</option>
                   <option value="card">Карта</option>
-                  <option value="transfer">Перевод</option>
-                  <option value="check">Чек</option>
+                  <option value="bank_transfer">Банковский перевод</option>
+                  <option value="online">Онлайн</option>
                 </select>
               </div>
 
@@ -330,21 +312,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
                   />
                 </div>
               )}
-
-              <div>
-                <label htmlFor="invoice_number" className="block text-sm font-medium text-gray-700 mb-2">
-                  Номер счета
-                </label>
-                <input
-                  type="text"
-                  id="invoice_number"
-                  name="invoice_number"
-                  value={formData.invoice_number}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Например: INV-2024-001"
-                />
-              </div>
             </div>
 
             <div>
