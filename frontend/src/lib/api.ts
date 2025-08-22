@@ -2,8 +2,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Lesson, LessonFormData } from "../types/lesson";
 import { User } from "../types/user";
-import { AuthResponse, ServerResponse, LoginResponseData, RegisterResponseData} from "../types/api";
-
+import { AuthResponse, ServerResponse} from "../types/api";
 
 class ApiClient {
   private baseURL: string;
@@ -32,10 +31,20 @@ class ApiClient {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     
+    // Prepare headers
+    const headers: Record<string, string> = {};
+    
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...headers,
         ...options.headers,
       },
       signal: controller.signal,
@@ -46,15 +55,26 @@ class ApiClient {
       const response = await fetch(url, config);
       clearTimeout(id);
       
+      // Handle empty responses (like 204 No Content)
+      if (response.status === 204) {
+        return {
+          success: true,
+          data: undefined as unknown as T,
+        };
+      }
+      
       if (!response.ok) {
         let errorData: { message?: string } = {};
         try {
-          errorData = await response.json();
+          const errorText = await response.text();
+          errorData = errorText ? JSON.parse(errorText) : {};
         } catch (e) {
-          console.warn('Ошибка парсинга JSON:', e);
-          throw new Error(`HTTP ошибка! статус: ${response.status} - ${response.statusText}`);
+          console.warn('Ошибка парсинга JSON ошибки:', e);
         }
-        throw new Error(errorData.message || `HTTP ошибка! статус: ${response.status}`);
+        throw new Error(
+          errorData.message || 
+          `HTTP ошибка! статус: ${response.status} - ${response.statusText}`
+        );
       }
       
       const text = await response.text();
@@ -79,32 +99,10 @@ class ApiClient {
   }
 
   async upload<T>(endpoint: string, formData: FormData): Promise<ServerResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          ...(this.token && { Authorization: `Bearer ${this.token}` }),
-          // Не устанавливаем Content-Type, чтобы браузер сам установил с boundary
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return {
-        success: data.success !== undefined ? data.success : true,
-        data: data.data !== undefined ? data.data : data,
-        message: data.message,
-      };
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw error;
-    }
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: formData,
+    }, 30000); // 30 секунд для загрузки файлов
   }
 
   // Методы аутентификации
@@ -115,22 +113,14 @@ class ApiClient {
         body: JSON.stringify({ email, password }),
       });
       
-      // Создаем интерфейс для данных ответа
-      
-      if (response.success) {
-        const responseData = response.data as LoginResponseData;
-        const token = response.token || responseData?.token;
-        const user = response.user || responseData?.user;
-        
-        if (token) {
-          this.setToken(token);
-          return {
-            success: true,
-            token,
-            user,
-            message: response.message
-          };
-        }
+      if (response.success && response.token) {
+        this.setToken(response.token);
+        return {
+          success: true,
+          token: response.token,
+          user: response.user,
+          message: response.message
+        };
       }
       
       return {
@@ -153,20 +143,14 @@ class ApiClient {
         body: JSON.stringify(userData),
       });
       
-      if (response.success) {
-        const responseData = response.data as RegisterResponseData;
-        const token = response.token || responseData?.token;
-        const user = response.user || responseData?.user;
-        
-        if (token) {
-          this.setToken(token);
-          return {
-            success: true,
-            token,
-            user,
-            message: response.message
-          };
-        }
+      if (response.success && response.token) {
+        this.setToken(response.token);
+        return {
+          success: true,
+          token: response.token,
+          user: response.user,
+          message: response.message
+        };
       }
       
       return {
@@ -185,12 +169,7 @@ class ApiClient {
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await this.request<User>('/auth/me');
-      
-      if (response.success) {
-        // Возвращаем непосредственно пользователя, а не весь response
-        return response.data || response.user || null;
-      }
-      return null;
+      return response.success ? response.data || response.user || null : null;
     } catch (error) {
       console.error('Ошибка получения текущего пользователя:', error);
       return null;
@@ -207,20 +186,8 @@ class ApiClient {
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
-  async get<T>(endpoint: string): Promise<ServerResponse<T>> {
-    try {
-      const response = await this.request<T>(endpoint, {
-        method: 'GET',
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('GET request failed:', error);
-      return {
-        success: false,
-        message: (error as Error).message
-      };
-    }
+  get<T>(endpoint: string): Promise<ServerResponse<T>> {
+    return this.request<T>(endpoint);
   }
 
   getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
@@ -234,56 +201,22 @@ class ApiClient {
     });
   }
 
-  update<T>(resource: string, id: string, data: unknown): Promise<ServerResponse<T>> {
-    return this.request<T>(`/${resource}/${id}`, {
+  update<T>(endpoint: string, data: unknown): Promise<ServerResponse<T>> {
+    return this.request<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  delete<T>(resource: string, id: string): Promise<ServerResponse<T>> {
-    return this.request<T>(`/${resource}/${id}`, {
+  delete<T>(endpoint: string): Promise<ServerResponse<T>> {
+    return this.request<T>(endpoint, {
       method: 'DELETE',
     });
   }
 
   // Специализированный метод для создания уроков
   async createLesson(lessonData: LessonFormData): Promise<ServerResponse<Lesson>> {
-    let scheduledDate = lessonData.scheduled_date;
-    
-    if (scheduledDate) {
-      try {
-        if (scheduledDate.length === 10) {
-          scheduledDate += 'T00:00:00';
-        }
-        else if (scheduledDate.length === 16) {
-          scheduledDate += ':00';
-        }
-        
-        const dateObj = new Date(scheduledDate);
-        if (!isNaN(dateObj.getTime())) {
-          scheduledDate = dateObj.toISOString();
-        }
-      } catch (error) {
-        console.warn('Ошибка преобразования даты:', error);
-      }
-    }
-
-    const transformedData = {
-      title: lessonData.title,
-      description: lessonData.description,
-      instructor: lessonData.instructor_id,
-      member: lessonData.member_id,
-      scheduled_date: scheduledDate,
-      duration_minutes: lessonData.duration_minutes,
-      lesson_type: lessonData.lesson_type,
-      cost: lessonData.cost,
-      status: lessonData.status,
-      payment_status: lessonData.payment_status,
-      notes: lessonData.notes,
-      ...(lessonData.horse_id && { horse: lessonData.horse_id })
-    };
-    
+    const transformedData = this.transformLessonData(lessonData);
     return this.request<Lesson>('/lessons', {
       method: 'POST',
       body: JSON.stringify(transformedData),
@@ -292,6 +225,14 @@ class ApiClient {
 
   // Специализированный метод для обновления уроков
   async updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ServerResponse<Lesson>> {
+    const transformedData = this.transformLessonData(lessonData);
+    return this.request<Lesson>(`/lessons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(transformedData),
+    });
+  }
+
+  private transformLessonData(lessonData: Partial<LessonFormData>): Record<string, unknown> {
     let scheduledDate = lessonData.scheduled_date;
     
     if (scheduledDate) {
@@ -327,10 +268,7 @@ class ApiClient {
     if (lessonData.notes !== undefined) transformedData.notes = lessonData.notes;
     if (lessonData.horse_id !== undefined) transformedData.horse = lessonData.horse_id;
     
-    return this.request<Lesson>(`/lessons/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(transformedData),
-    });
+    return transformedData;
   }
 }
 
