@@ -9,14 +9,23 @@ export interface Event {
   maxParticipants?: number
   registrationFee: number
   organizer: {
-    _id: string
     first_name: string
     last_name: string
+    email?: string
+    phone?: string
   }
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
   requirements?: string
   participants: any[]
+  createdAt?: string
+  updatedAt?: string
   isActive?: boolean
+}
+
+export interface EventDetailProps {
+  isOpen: boolean
+  onClose: () => void
+  event: Event | null
 }
 
 export interface EventFormData {
@@ -30,13 +39,6 @@ export interface EventFormData {
   registrationFee: number
   requirements?: string
 }
-
-export interface ApiResponse<T> {
-  success: boolean
-  data: T
-  message?: string
-}
-
 export interface EventFormProps {
   isOpen: boolean
   onClose: () => void

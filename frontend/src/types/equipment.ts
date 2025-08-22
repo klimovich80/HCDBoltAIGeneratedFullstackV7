@@ -64,3 +64,10 @@ export interface EquipmentDetailProps {
   equipment: Equipment | null
   onUpdate: () => void
 }
+
+export interface EquipmentPhotosProps {
+  equipment: Equipment;
+  onUpdate: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+}

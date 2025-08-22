@@ -1,42 +1,9 @@
 // api.ts
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Lesson, LessonFormData } from "../types/lesson";
+import { User } from "../types/user";
+import { AuthResponse, ServerResponse, LoginResponseData, RegisterResponseData} from "../types/api";
 
-// Интерфейсы для типов данных
-interface User {
-  _id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: 'admin' | 'trainer' | 'member' | 'guest';
-  phone?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-// Интерфейсы для ответов API
-interface AuthResponse {
-  success: boolean;
-  token?: string;
-  user?: User;
-  message?: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  pages: number;
-}
-
-interface ServerResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  pagination?: Pagination;
-  token?: string;
-  user?: User;
-}
 
 class ApiClient {
   private baseURL: string;
@@ -149,10 +116,6 @@ class ApiClient {
       });
       
       // Создаем интерфейс для данных ответа
-      interface LoginResponseData {
-        token?: string;
-        user?: User;
-      }
       
       if (response.success) {
         const responseData = response.data as LoginResponseData;
@@ -189,12 +152,6 @@ class ApiClient {
         method: 'POST',
         body: JSON.stringify(userData),
       });
-      
-      // Создаем интерфейс для данных ответа
-      interface RegisterResponseData {
-        token?: string;
-        user?: User;
-      }
       
       if (response.success) {
         const responseData = response.data as RegisterResponseData;

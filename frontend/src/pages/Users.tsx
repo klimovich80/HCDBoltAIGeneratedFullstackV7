@@ -4,21 +4,7 @@ import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import UserForm from '../components/UserForm'
 import UserDetail from '../components/UserDetail'
-
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  email: string
-  phone?: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  membershipTier?: 'basic' | 'premium' | 'elite'
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  createdAt: string
-  isActive?: boolean
-  profileImage?: string
-}
+import { User } from '../types/user'
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth()

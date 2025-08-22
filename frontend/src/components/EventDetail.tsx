@@ -1,34 +1,6 @@
 import React from 'react'
-import { X, Calendar, Clock, MapPin, Users, DollarSign, FileText, Trophy } from 'lucide-react'
-
-interface Event {
-  _id: string
-  title: string
-  description?: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
-  startDate: string
-  endDate: string
-  location?: string
-  maxParticipants?: number
-  registrationFee: number
-  organizer: {
-    first_name: string
-    last_name: string
-    email?: string
-    phone?: string
-  }
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
-  requirements?: string
-  participants: any[]
-  createdAt?: string
-  updatedAt?: string
-}
-
-interface EventDetailProps {
-  isOpen: boolean
-  onClose: () => void
-  event: Event | null
-}
+import { X, Calendar, MapPin, Users, DollarSign, FileText, Trophy } from 'lucide-react'
+import { EventDetailProps } from '../types/events'
 
 const EventDetail: React.FC<EventDetailProps> = ({ isOpen, onClose, event }) => {
   if (!isOpen || !event) return null

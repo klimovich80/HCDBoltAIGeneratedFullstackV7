@@ -3,25 +3,8 @@ import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { Horse } from '../types/horse'
 import { LessonFormData, LessonFormProps } from '../types/lesson'
-
-// Интерфейсы для типов данных
-interface ApiErrorResponse {
-  message?: string;
-  success?: boolean;
-  errors?: string[];
-}
-
-interface ExtendedError extends Error {
-  response?: Response & {
-    data?: ApiErrorResponse;
-  };
-}
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  role: string
-}
+import { User } from '../types/user'
+import { ExtendedError} from '../types/api'
 
 const LessonForm: React.FC<LessonFormProps> = ({
   isOpen,

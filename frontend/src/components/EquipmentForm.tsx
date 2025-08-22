@@ -49,14 +49,14 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
   const [error, setError] = useState('')
   const [horses, setHorses] = useState<Horse[]>([])
   const [loadingData, setLoadingData] = useState(true)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
-   // Загрузка лошадей для назначения
+  // Загрузка лошадей для назначения
   useEffect(() => {
     const loadHorses = async () => {
       try {
         setLoadingData(true)
         
-        // ИСПРАВЛЕНИЕ: Убрали лишние квадратные скобки из типа
         const horsesResponse = await apiClient.getAll<Horse>('horses')
         if (horsesResponse.success) {
           setHorses(horsesResponse.data || [])
@@ -118,6 +118,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         location: '',
         notes: ''
       })
+      setSelectedFiles([])
     }
   }, [equipment, mode])
 
@@ -159,7 +160,22 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         if (mode === 'edit' && equipment) {
           await apiClient.update('equipment', equipment._id, requestData)
         } else {
-          await apiClient.create('equipment', requestData)
+          // Для создания сначала создаем оборудование
+          const createResponse = await apiClient.create('equipment', requestData)
+          
+          // Если есть выбранные файлы, загружаем их
+          if (createResponse.success && selectedFiles.length > 0) {
+            const equipmentId = createResponse.data?._id || createResponse.data?.id
+            
+            if (equipmentId) {
+              const formData = new FormData()
+              selectedFiles.forEach(file => {
+                formData.append('photos', file)
+              })
+              
+              await apiClient.upload(`equipment/${equipmentId}/photos`, formData)
+            }
+          }
         }
       }
 
@@ -182,6 +198,17 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
         ? value === '' ? undefined : parseFloat(value) || 0 
         : value
     }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files)
+      setSelectedFiles(prev => [...prev, ...filesArray])
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
   // Функция для проверки, должно ли поле быть отключено в режиме обслуживания
@@ -462,6 +489,48 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
+
+              {/* Поле для загрузки фотографий (только в режиме создания) */}
+              {mode === 'create' && (
+                <div className="md:col-span-2">
+                  <label htmlFor="photos" className="block text-sm font-medium text-gray-700 mb-2">
+                    Фотографии снаряжения
+                  </label>
+                  <input
+                    type="file"
+                    id="photos"
+                    name="photos"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <p className="text-sm text-gray-500 mt-2">
+                    Вы можете выбрать несколько фотографий
+                  </p>
+
+                  {/* Превью выбранных файлов */}
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Выбранные файлы:</h4>
+                      <div className="space-y-2">
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                            <span className="text-sm text-gray-600 truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Поле заметок по обслуживанию - Всегда активно */}
@@ -480,7 +549,7 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({
               />
             </div>
 
-            {/* Поле общих заметки - Показывать только в режимах создания/редактирования */}
+            {/* Поле общих заметок - Показывать только в режимах создания/редактирования */}
             {mode !== 'maintenance' && (
               <div>
                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">

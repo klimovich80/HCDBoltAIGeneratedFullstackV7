@@ -2,14 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Trash2, Star, Image } from 'lucide-react';
 import { apiClient } from '../lib/api';
-import { Equipment, EquipmentPhoto } from '../types/equipment';
-
-interface EquipmentPhotosProps {
-  equipment: Equipment;
-  onUpdate: () => void;
-  isOpen: boolean;
-  onClose: () => void;
-}
+import { EquipmentPhotosProps } from '../types/equipment';
 
 const EquipmentPhotos: React.FC<EquipmentPhotosProps> = ({
   equipment,

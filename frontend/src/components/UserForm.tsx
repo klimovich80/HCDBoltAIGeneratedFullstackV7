@@ -1,44 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-
-interface UserFormData {
-  first_name: string
-  last_name: string
-  email: string
-  password?: string
-  phone?: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  membershipTier?: 'basic' | 'premium' | 'elite'
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  emergencyContactRelationship?: string
-  notes?: string
-  profileImage?: string
-}
-
-interface UserFormProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
-  user?: User | null
-  mode?: 'create' | 'edit'
-}
-
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  email: string
-  phone?: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  membershipTier?: 'basic' | 'premium' | 'elite'
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  emergencyContactRelationship?: string
-  notes?: string
-  profileImage?: string
-}
+import { UserFormProps, UserFormData } from '../types/user'
 
 const UserForm: React.FC<UserFormProps> = ({ 
   isOpen, 
@@ -141,7 +104,7 @@ const UserForm: React.FC<UserFormProps> = ({
       }
       reader.readAsDataURL(file)
     } catch (error) {
-      setError('Ошибка при загрузке изображения')
+      setError('Ошибка при загрузке изображения'+error)
       setUploadingImage(false)
     }
   }

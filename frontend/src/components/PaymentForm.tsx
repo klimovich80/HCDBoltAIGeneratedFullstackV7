@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { PaymentFormData, PaymentFormProps } from '../types/payment'
-interface User {
-  _id: string
-  first_name: string
-  last_name: string
-  role: string
-}
+import { User } from '../types/user'
 
 const PaymentForm: React.FC<PaymentFormProps> = ({ 
   isOpen, 
@@ -42,19 +37,9 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
           setMembers(membersResponse.data)
         } else {
           // Fallback demo data
-          setMembers([
-            { _id: '1', first_name: 'Emma', last_name: 'Williams', role: 'member' },
-            { _id: '2', first_name: 'James', last_name: 'Brown', role: 'member' },
-            { _id: '3', first_name: 'Sophie', last_name: 'Davis', role: 'member' }
-          ])
         }
       } catch (error) {
         console.error('Failed to load members:', error)
-        setMembers([
-          { _id: '1', first_name: 'Emma', last_name: 'Williams', role: 'member' },
-          { _id: '2', first_name: 'James', last_name: 'Brown', role: 'member' },
-          { _id: '3', first_name: 'Sophie', last_name: 'Davis', role: 'member' }
-        ])
       } finally {
         setLoadingData(false)
       }
