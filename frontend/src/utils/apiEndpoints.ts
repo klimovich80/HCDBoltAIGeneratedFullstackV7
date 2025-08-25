@@ -1,0 +1,22 @@
+export const FRONTEND_BASE_URL = 'http://localhost:5173'
+export const FRONTEND_DASHBOARD_URL = '/dashboard'
+export const FRONTEND_LOGIN_URL = '/login'
+export const FRONTEND_REGISTER_URL = '/register'
+export const FRONTEND_LOGOUT_URL = '/logout'
+export const FRONTEND_HOME_URL = '/'
+export const FRONTEND_USER_URL = '/user'
+export const FRONTEND_USERS_URL = '/users'
+export const FRONTEND_HORSES_URL = "/horses" 
+export const FRONTEND_LESSONS_URL = "/lessons"
+export const FRONTEND_EVENTS_URL = "/events"
+export const FRONTEND_EQUIPMENT_URL = "/equipment"
+export const FRONTEND_PAYMENTS_URL = "/payments"
+
+export const API_BASE_URL = 'http://localhost:5000'
+export const API_URL='/api'
+export const API_SERVER_HEALTH_CHECK_URL = '/api/health'
+export const API_SERVER_USERS_URL = '/api/users'
+export const API_SERVER_LOGIN_URL = '/api/login'
+export const API_SERVER_REGISTER_URL = '/api/register'
+export const API_SERVER_LOGOUT_URL = '/api/logout'
+export const API_SERVER_DASHBOARD_URL = '/api/stats'
