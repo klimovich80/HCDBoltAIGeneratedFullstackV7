@@ -1,4 +1,6 @@
 // shared/config.js
+
+
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -37,8 +39,9 @@ const config = {
       auth: '/auth',
       health: '/health',
       users: '/users',
-      login: '/login',
-      register: '/register',
+      login: '/auth/login',
+      register: '/auth/register',
+      me: 'auth/me',
       logout: '/logout',
       dashboard: '/stats',
       horses: '/horses',

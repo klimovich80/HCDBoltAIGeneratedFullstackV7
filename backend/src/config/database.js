@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const logger = require('./logger');
+const config = require('../../../shared/config');
 
 let isConnected = false;
 
@@ -10,7 +11,7 @@ const connectDB = () => {
       return;
     }
 
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/equestrian_crm';
+    const mongoUri = config.backend.mongodbUri;
 
     mongoose.connect(mongoUri)
       .then(() => {
