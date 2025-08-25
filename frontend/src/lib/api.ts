@@ -1,5 +1,5 @@
 // api.ts
-import { config } from "../config"
+import { config } from "../config";
 
 const apiBaseUrl = config.api.baseUrl;
 const loginUrl = config.api.paths.login;
@@ -9,7 +9,12 @@ const lessonsUrl = config.api.paths.lessons;
 
 import { Lesson, LessonFormData } from "../types/lesson";
 import { User } from "../types/user";
-import { AuthResponse, ServerResponse, LoginResponseData, RegisterResponseData } from "../types/api";
+import {
+  AuthResponse,
+  ServerResponse,
+  LoginResponseData,
+  RegisterResponseData
+} from "../types/api";
 
 class ApiClient {
   private baseURL: string;
