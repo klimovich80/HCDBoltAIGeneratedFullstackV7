@@ -7,9 +7,20 @@ const morgan = require('morgan');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
+
 const { connectDB } = require('./config/database.js');
 const logger = require('./config/logger');
 const config = require('../../shared/config');
+const baseUrl = config.api.paths.base
+const authUrl = baseUrl + config.api.paths.auth
+const usersUrl = baseUrl + config.api.paths.users
+const horsesUrl = baseUrl + config.api.paths.horses
+const lessonsUrl = baseUrl + config.api.paths.lessons
+const eventsUrl = baseUrl + config.api.paths.events
+const equipmentUrl = baseUrl + config.api.paths.equipment
+const paymentsUrl = baseUrl + config.api.paths.payments
+const statsUrl = baseUrl + config.api.paths.stats
+
 
 // Подключение к базе данных
 connectDB();
@@ -47,14 +58,14 @@ app.get(config.api.paths.health, (req, res) => {
 });
 
 // API маршруты
-app.use(config.api.paths.base + '/auth', require('./routes/auth'));
-app.use(config.api.paths.base + '/users', require('./routes/users'));
-app.use(config.api.paths.base + '/horses', require('./routes/horses'));
-app.use(config.api.paths.base + '/lessons', require('./routes/lessons'));
-app.use(config.api.paths.base + '/events', require('./routes/events'));
-app.use(config.api.paths.base + '/equipment', require('./routes/equipment'));
-app.use(config.api.paths.base + '/payments', require('./routes/payments'));
-app.use(config.api.paths.base + '/stats', require('./routes/stats'));
+app.use(authUrl, require('./routes/auth'));
+app.use(usersUrl, require('./routes/users'));
+app.use(horsesUrl, require('./routes/horses'));
+app.use(lessonsUrl, require('./routes/lessons'));
+app.use(eventsUrl, require('./routes/events'));
+app.use(equipmentUrl, require('./routes/equipment'));
+app.use(paymentsUrl, require('./routes/payments'));
+app.use(statsUrl, require('./routes/stats'));
 
 // Обработка ошибок 404
 app.use('*', (req, res) => {

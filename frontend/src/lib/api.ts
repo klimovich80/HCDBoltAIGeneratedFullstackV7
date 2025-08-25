@@ -5,6 +5,7 @@ const apiBaseUrl = config.api.baseUrl;
 const loginUrl = config.api.paths.login;
 const registerUrl = config.api.paths.register;
 const meUrl = config.api.paths.me;
+const lessonsUrl = config.api.paths.lessons;
 
 import { Lesson, LessonFormData } from "../types/lesson";
 import { User } from "../types/user";
@@ -285,7 +286,7 @@ class ApiClient {
       ...(lessonData.horse_id && { horse: lessonData.horse_id })
     };
     
-    return this.request<Lesson>('/lessons', {
+    return this.request<Lesson>(lessonsUrl, {
       method: 'POST',
       body: JSON.stringify(transformedData),
     });
@@ -328,7 +329,7 @@ class ApiClient {
     if (lessonData.notes !== undefined) transformedData.notes = lessonData.notes;
     if (lessonData.horse_id !== undefined) transformedData.horse = lessonData.horse_id;
     
-    return this.request<Lesson>(`/lessons/${id}`, {
+    return this.request<Lesson>(`${lessonsUrl}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(transformedData),
     });

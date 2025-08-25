@@ -34,6 +34,7 @@ const config = {
     baseUrl: process.env.VITE_API_URL || 'http://localhost:5000/api',
     paths: {
       base: '/api',
+      auth: '/auth',
       health: '/health',
       users: '/users',
       login: '/login',
@@ -44,7 +45,8 @@ const config = {
       lessons: '/lessons',
       events: '/events',
       equipment: '/equipment',
-      payments: '/payments'
+      payments: '/payments',
+      stats: '/stats'
     }
   }
 };
