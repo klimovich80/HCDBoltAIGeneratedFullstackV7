@@ -1,9 +1,14 @@
 // api.ts
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { config } from "../config"
+
+const apiBaseUrl = config.api.baseUrl;
+const loginUrl = config.api.paths.login;
+const registerUrl = config.api.paths.register;
+const meUrl = config.api.paths.me;
+
 import { Lesson, LessonFormData } from "../types/lesson";
 import { User } from "../types/user";
-import { AuthResponse, ServerResponse, LoginResponseData, RegisterResponseData} from "../types/api";
-
+import { AuthResponse, ServerResponse, LoginResponseData, RegisterResponseData } from "../types/api";
 
 class ApiClient {
   private baseURL: string;
@@ -86,7 +91,6 @@ class ApiClient {
         method: 'POST',
         headers: {
           ...(this.token && { Authorization: `Bearer ${this.token}` }),
-          // Не устанавливаем Content-Type, чтобы браузер сам установил с boundary
         },
         body: formData,
       });
@@ -110,12 +114,10 @@ class ApiClient {
   // Методы аутентификации
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
-      const response = await this.request<AuthResponse>('/auth/login', {
+      const response = await this.request<AuthResponse>(loginUrl, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      
-      // Создаем интерфейс для данных ответа
       
       if (response.success) {
         const responseData = response.data as LoginResponseData;
@@ -148,7 +150,7 @@ class ApiClient {
     
   async register(userData: Partial<User>): Promise<AuthResponse> {
     try {
-      const response = await this.request<AuthResponse>('/auth/register', {
+      const response = await this.request<AuthResponse>(registerUrl, {
         method: 'POST',
         body: JSON.stringify(userData),
       });
@@ -184,10 +186,9 @@ class ApiClient {
     
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await this.request<User>('/auth/me');
+      const response = await this.request<User>(meUrl);
       
       if (response.success) {
-        // Возвращаем непосредственно пользователя, а не весь response
         return response.data || response.user || null;
       }
       return null;
@@ -334,7 +335,7 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(apiBaseUrl);
 
 // Помощники аутентификации
 export const signIn = (email: string, password: string): Promise<AuthResponse> => {

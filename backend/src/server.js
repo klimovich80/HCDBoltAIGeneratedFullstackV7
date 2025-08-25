@@ -4,10 +4,12 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const { connectDB } = require('./config/database.js');
 const logger = require('./config/logger');
+const config = require('../../shared/config');
 
 // Подключение к базе данных
 connectDB();
@@ -17,7 +19,7 @@ const app = express();
 // Middleware безопасности
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: config.frontend.baseUrl,
   credentials: true
 }));
 
@@ -27,7 +29,7 @@ const limiter = rateLimit({
   max: 100, // максимум 100 запросов с одного IP
   message: 'Слишком много запросов с этого IP, попробуйте позже'
 });
-app.use('/api/', limiter);
+app.use(config.api.paths.base + '/', limiter);
 
 // Middleware
 app.use(compression());
@@ -36,7 +38,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Проверка состояния
-app.get('/health', (req, res) => {
+app.get(config.api.paths.health, (req, res) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -45,14 +47,14 @@ app.get('/health', (req, res) => {
 });
 
 // API маршруты
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/horses', require('./routes/horses'));
-app.use('/api/lessons', require('./routes/lessons'));
-app.use('/api/events', require('./routes/events'));
-app.use('/api/equipment', require('./routes/equipment'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/stats', require('./routes/stats'));
+app.use(config.api.paths.base + '/auth', require('./routes/auth'));
+app.use(config.api.paths.base + '/users', require('./routes/users'));
+app.use(config.api.paths.base + '/horses', require('./routes/horses'));
+app.use(config.api.paths.base + '/lessons', require('./routes/lessons'));
+app.use(config.api.paths.base + '/events', require('./routes/events'));
+app.use(config.api.paths.base + '/equipment', require('./routes/equipment'));
+app.use(config.api.paths.base + '/payments', require('./routes/payments'));
+app.use(config.api.paths.base + '/stats', require('./routes/stats'));
 
 // Обработка ошибок 404
 app.use('*', (req, res) => {
@@ -69,7 +71,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.backend.port;
 
 const server = app.listen(PORT, () => {
   logger.info(`Сервер запущен на порту ${PORT}`);
