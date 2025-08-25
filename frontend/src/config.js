@@ -65,7 +65,7 @@ export const config = {
       users: '/users',
       login: '/auth/login',
       register: '/auth/register',
-      me: 'auth/me',
+      me: '/auth/me',
       logout: '/logout',
       dashboard: '/stats',
       horses: '/horses',

@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const logger = require('../config/logger');
+const config = require('../../../shared/config');
 
 const router = express.Router();
 
@@ -116,12 +117,12 @@ router.post('/register', async (req, res) => {
 
       // Create user
       const user = await User.create(userData);
-
+      console.log('\n auth route jwt from config:', config.backend.jwtSecret, '\n');
       // Генерируем JWT токен
       const token = jwt.sign(
         { userId: user._id, role: user.role },
-        process.env.JWT_SECRET || 'fallback_secret',
-        { expiresIn: process.env.JWT_EXPIRE || '7d' }
+        config.backend.jwtSecret,
+        { expiresIn: config.backend.jwtExpire }
       );
 
       logger.info(`New user registered successfully: ${email}`);
@@ -216,11 +217,12 @@ router.post('/login', (req, res) => {
 
         // Find user again to get complete user object
         return User.findOne({ email }).then(user => {
+          console.log('\n auth route jwt from config:', config.backend.jwtSecret, '\n');
           // Генерируем JWT токен
           const token = jwt.sign(
             { userId: user._id, role: user.role },
-            process.env.JWT_SECRET || 'fallback_secret',
-            { expiresIn: process.env.JWT_EXPIRE || '7d' }
+            config.backend.jwtSecret,
+            { expiresIn: config.backend.jwtExpire }
           );
 
           logger.info(`User logged in successfully: ${email}`);

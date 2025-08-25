@@ -1,9 +1,11 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const logger = require('../config/logger');
+const config = require('../../../shared/config');
 
 // Middleware аутентификации
 const auth = (req, res, next) => {
+  console.log('\n auth middleware jwt from config:', config.backend.jwtSecret, '\n');
   const handleAuth = () => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -13,7 +15,7 @@ const auth = (req, res, next) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const decoded = jwt.verify(token, config.backend.jwtSecret);
 
       User.findById(decoded.userId).select('-password')
         .then(user => {
