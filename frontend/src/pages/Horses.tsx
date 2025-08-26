@@ -3,7 +3,7 @@ import { Search, Plus, Edit, Eye, Archive, RotateCcw, Trash2 } from 'lucide-reac
 import { apiClient } from '../lib/api'
 import HorseForm from '../components/HorseForm'
 import HorseDetail from '../components/HorseDetail'
-import { Horse } from '../types/horse'
+import { Horse } from '../types/index'
 
 const Horses: React.FC = () => {
   const [horses, setHorses] = useState<Horse[]>([])

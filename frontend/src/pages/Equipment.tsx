@@ -4,7 +4,7 @@ import { apiClient } from '../lib/api'
 import EquipmentForm from '../components/EquipmentForm'
 import EquipmentDetail from '../components/EquipmentDetail'
 import EquipmentPhotos from '../components/EquipmentPhotos'
-import { Equipment as EquipmentType } from '../types/equipment'
+import { Equipment as EquipmentType } from '../types/index'
 
 const Equipment: React.FC = () => {
   const [equipment, setEquipment] = useState<EquipmentType[]>([])

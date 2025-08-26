@@ -3,7 +3,7 @@ import { Search, Plus, Calendar, Clock, User, Edit, Eye, Trash2, Archive, Rotate
 import { apiClient } from '../lib/api'
 import LessonForm from '../components/LessonForm'
 import LessonDetail from '../components/LessonDetail'
-import { Lesson } from '../types/lesson'
+import { Lesson } from '../types/index'
 
 // Типы для статусов
 type LessonStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'

@@ -4,7 +4,7 @@ import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import UserForm from '../components/UserForm'
 import UserDetail from '../components/UserDetail'
-import { User } from '../types/user'
+import { User } from '../types/index'
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth()

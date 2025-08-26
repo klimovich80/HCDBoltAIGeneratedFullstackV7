@@ -3,8 +3,10 @@ import { Search, Plus, Calendar, MapPin, Users, Edit, Eye, Trash2, Archive, Rota
 import { apiClient } from '../lib/api'
 import EventForm from '../components/EventForm'
 import EventDetail from '../components/EventDetail'
-import { Event } from '../types/events'
-import { ApiResponse } from '../types/api'
+import { 
+  Event,
+  ApiResponse
+} from '../types/index'
 
 const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([])

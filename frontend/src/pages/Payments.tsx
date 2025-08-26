@@ -3,7 +3,7 @@ import { Search, Plus, DollarSign, Calendar, Edit, Eye, Trash2, Archive, RotateC
 import { apiClient } from '../lib/api'
 import PaymentForm from '../components/PaymentForm'
 import PaymentDetail from '../components/PaymentDetail'
-import { Payment } from '../types/payment'
+import { Payment } from '../types/index'
 
 const Payments: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([])

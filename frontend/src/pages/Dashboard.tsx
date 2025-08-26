@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react'
-import { Users as Horse, Calendar, Trophy, CreditCard, Users, TrendingUp, Clock, AlertCircle } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { 
+  Users as Horse, 
+  Calendar, 
+  Trophy, 
+  CreditCard, 
+  Users, 
+  TrendingUp, 
+  Clock, 
+  AlertCircle 
+} from 'lucide-react'
 import { apiClient } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { DashboardStats } from '../types/stats'
+import { DashboardStats } from '../types/index'
 
 const Dashboard: React.FC = () => {
   const { user: currentUser } = useAuth()
@@ -24,59 +33,49 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  // Начальное состояние для сброса статистики
+  const initialStats = useMemo(() => ({
+    totalHorses: 0,
+    upcomingLessons: 0,
+    activeEvents: 0,
+    pendingPayments: 0,
+    totalMembers: 0,
+    monthlyRevenue: 0,
+    newHorsesThisMonth: 0,
+    newLessonsThisWeek: 0,
+    newMembersThisMonth: 0,
+    pendingPaymentsAmount: 0,
+    revenueGrowthPercent: 0,
+    upcomingEvents: [],
+    recentActivity: []
+  }), [])
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setError('')
-        // Используем get вместо getAll, так как endpoint возвращает один объект
-        const response = await apiClient.get<DashboardStats>('/stats/dashboard')
+        // Запрос статистики для дашборда
+        const response = await apiClient.getDashboardStats();
 
         if (response.success && response.data) {
           setStats(response.data)
         } else {
           setError(response.message || 'Не удалось загрузить статистику')
-          setStats({
-            totalHorses: 0,
-            upcomingLessons: 0,
-            activeEvents: 0,
-            pendingPayments: 0,
-            totalMembers: 0,
-            monthlyRevenue: 0,
-            newHorsesThisMonth: 0,
-            newLessonsThisWeek: 0,
-            newMembersThisMonth: 0,
-            pendingPaymentsAmount: 0,
-            revenueGrowthPercent: 0,
-            upcomingEvents: [],
-            recentActivity: []
-          })
+          setStats(initialStats)
         }
       } catch (error) {
-        console.error('Failed to fetch stats:', error)
+        console.error('Ошибка загрузки статистики:', error)
         setError('Ошибка при загрузке данных')
-        setStats({
-          totalHorses: 0,
-          upcomingLessons: 0,
-          activeEvents: 0,
-          pendingPayments: 0,
-          totalMembers: 0,
-          monthlyRevenue: 0,
-          newHorsesThisMonth: 0,
-          newLessonsThisWeek: 0,
-          newMembersThisMonth: 0,
-          pendingPaymentsAmount: 0,
-          revenueGrowthPercent: 0,
-          upcomingEvents: [],
-          recentActivity: []
-        })
+        setStats(initialStats)
       } finally {
         setLoading(false)
       }
     }
 
     fetchStats()
-  }, [])
+  }, [initialStats]) // Добавлена зависимость initialStats
 
+  // Функция форматирования валюты
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -85,10 +84,12 @@ const Dashboard: React.FC = () => {
     }).format(amount)
   }
 
+  // Функция форматирования чисел
   const formatNumber = (num: number): string => {
     return new Intl.NumberFormat('ru-RU').format(num)
   }
 
+  // Функция форматирования даты
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString)
     return date.toLocaleDateString('ru-RU', {
@@ -98,6 +99,7 @@ const Dashboard: React.FC = () => {
     })
   }
 
+  // Функция форматирования времени (сколько времени прошло)
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString)
     const now = new Date()
@@ -113,6 +115,7 @@ const Dashboard: React.FC = () => {
     }
   }
 
+  // Получение иконки для типа активности
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'lesson': return <Clock className="h-4 w-4 text-green-500" />
@@ -122,7 +125,8 @@ const Dashboard: React.FC = () => {
     }
   }
 
-  const statCards = [
+  // Карточки статистики с использованием useMemo для оптимизации
+  const statCards = useMemo(() => [
     {
       name: 'Всего лошадей',
       value: formatNumber(stats.totalHorses),
@@ -165,8 +169,9 @@ const Dashboard: React.FC = () => {
       color: 'bg-emerald-500',
       change: `+${stats.revenueGrowthPercent}% с прошлого месяца`
     }
-  ]
+  ], [stats]) // Зависимость от stats для пересчета только при изменении статистики
 
+  // Состояние загрузки
   if (loading) {
     return (
       <div className="space-y-6">
@@ -203,6 +208,7 @@ const Dashboard: React.FC = () => {
         </p>
       </div>
 
+      {/* Отображение ошибок */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex items-center">
@@ -212,6 +218,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Карточки статистики */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {statCards.map((card) => (
           <div key={card.name} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
@@ -284,7 +291,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Быстрые действия */}
+      {/* Быстрые действия для администратора */}
       {currentUser?.role === 'admin' && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Быстрые действия</h3>

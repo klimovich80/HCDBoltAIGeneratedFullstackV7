@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
-import { Horse } from '../types/horse'
-import { LessonFormData, LessonFormProps } from '../types/lesson'
-import { User } from '../types/user'
-import { ExtendedError} from '../types/api'
+import {
+  Horse,
+  LessonFormData,
+  LessonFormProps,
+  User,
+  ExtendedError
+} from '../types/index'
 
 const LessonForm: React.FC<LessonFormProps> = ({
   isOpen,
@@ -123,55 +126,63 @@ const LessonForm: React.FC<LessonFormProps> = ({
   }, [lesson, mode])
 
   // Обработчик отправки формы
-const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-  e.preventDefault()
-  setLoading(true)
-  setError('')
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
-  try {
-    // Проверка обязательных полей
-    if (!formData.title.trim()) {
-      throw new Error('Название урока обязательно')
-    }
-    if (!formData.instructor_id) {
-      throw new Error('Инструктор обязателен')
-    }
-    if (!formData.member_id) {
-      throw new Error('Участник обязателен')
-    }
-    if (!formData.scheduled_date) {
-      throw new Error('Дата урока обязательна')
-    }
-
-    if (mode === 'edit' && lesson) {
-      await apiClient.updateLesson(lesson._id, formData)
-    } else {
-      await apiClient.createLesson(formData)
-    }
-
-    // Вызов колбэков при успешной отправке
-    onSuccess()
-    onClose()
-  } catch (err: unknown) {
-    // Обработка ошибок
-    console.error('Ошибка отправки формы:', err)
-    
-    let errorMessage = 'Произошла неизвестная ошибка';
-    
-    if (err instanceof Error) {
-      const extendedError = err as ExtendedError;
-      if (extendedError.response?.data?.message) {
-        errorMessage = extendedError.response.data.message;
-      } else {
-        errorMessage = extendedError.message;
+    try {
+      // Проверка обязательных полей
+      if (!formData.title.trim()) {
+        throw new Error('Название урока обязательно')
       }
+      if (!formData.instructor_id) {
+        throw new Error('Инструктор обязателен')
+      }
+      if (!formData.member_id) {
+        throw new Error('Участник обязателен')
+      }
+      if (!formData.scheduled_date) {
+        throw new Error('Дата урока обязательна')
+      }
+
+      // Преобразование числовых полей к нужному типу
+      const submitData = {
+        ...formData,
+        cost: Number(formData.cost),
+        duration_minutes: Number(formData.duration_minutes)
+      }
+
+      if (mode === 'edit' && lesson) {
+        await apiClient.updateLesson(lesson._id, submitData)
+      } else {
+        await apiClient.createLesson(submitData)
+      }
+
+      // Вызов колбэков при успешной отправке
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      // Обработка ошибок
+      console.error('Ошибка отправки формы:', err)
+      
+      let errorMessage = 'Произошла неизвестная ошибка';
+      
+      if (err instanceof Error) {
+        const extendedError = err as ExtendedError;
+        if (extendedError.response?.data?.message) {
+          errorMessage = extendedError.response.data.message;
+        } else {
+          errorMessage = extendedError.message;
+        }
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false)
     }
-    
-    setError(errorMessage);
-  } finally {
-    setLoading(false)
   }
-}
+
   // Обработчик изменения полей формы
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target
@@ -366,7 +377,7 @@ const handleSubmit = async (e: React.FormEvent): Promise<void> => {
                   name="cost"
                   required
                   min="0"
-                  step="0.01"
+                  step="100"
                   value={formData.cost}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
