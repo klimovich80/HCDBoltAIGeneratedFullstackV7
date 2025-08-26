@@ -5,7 +5,6 @@ const config = require('../../../shared/config');
 
 // Middleware аутентификации
 const auth = (req, res, next) => {
-  console.log('\n auth middleware jwt from config:', config.backend.jwtSecret, '\n');
   const handleAuth = () => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 

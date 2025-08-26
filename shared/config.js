@@ -1,6 +1,5 @@
 // shared/config.js
 
-
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
@@ -33,7 +32,7 @@ const config = {
   },
 
   api: {
-    baseUrl: process.env.VITE_API_URL || 'http://localhost:5000/api',
+    baseUrl: process.env.VITE_API_URL || 'http://localhost:5000',
     paths: {
       base: '/api',
       auth: '/auth',

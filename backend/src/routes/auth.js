@@ -117,7 +117,6 @@ router.post('/register', async (req, res) => {
 
       // Create user
       const user = await User.create(userData);
-      console.log('\n auth route jwt from config:', config.backend.jwtSecret, '\n');
       // Генерируем JWT токен
       const token = jwt.sign(
         { userId: user._id, role: user.role },
@@ -217,7 +216,6 @@ router.post('/login', (req, res) => {
 
         // Find user again to get complete user object
         return User.findOne({ email }).then(user => {
-          console.log('\n auth route jwt from config:', config.backend.jwtSecret, '\n');
           // Генерируем JWT токен
           const token = jwt.sign(
             { userId: user._id, role: user.role },
