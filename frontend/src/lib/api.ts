@@ -170,11 +170,13 @@ private async request<T>(
 
   // Универсальные CRUD-методы
   getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ServerResponse<T[]>> {
+    console.log("getAll from api.ts", resource)
     const queryString = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
   getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
+    console.log("getById from api.ts", resource, id)
     return this.request<T>(`/${resource}/${id}`);
   }
 
@@ -186,6 +188,7 @@ private async request<T>(
   }
 
   update<T>(resource: string, id: string, data: unknown): Promise<ServerResponse<T>> {
+    console.log("update from api.ts", resource, id, data)
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -234,6 +237,7 @@ private async request<T>(
 
   // Обновление урока
   async updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ServerResponse<Lesson>> {
+    console.log("updating lesson from api.ts", lessonData)
     const transformedData: Record<string, unknown> = {};
 
     Object.entries(lessonData).forEach(([key, value]) => {

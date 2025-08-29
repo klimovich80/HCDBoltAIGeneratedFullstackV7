@@ -130,6 +130,8 @@ const LessonForm: React.FC<LessonFormProps> = ({
     e.preventDefault()
     setLoading(true)
     setError('')
+    console.log('Форма отправлена')
+    console.log(formData)
 
     try {
       // Проверка обязательных полей
@@ -186,6 +188,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
   // Обработчик изменения полей формы
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target
+    console.log('Поле ${name} изменено:', name, value)
     setFormData(prev => ({
       ...prev,
       [name]: name === 'duration_minutes' || name === 'cost'

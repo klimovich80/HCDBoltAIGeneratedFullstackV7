@@ -43,6 +43,7 @@ const Lessons: React.FC = () => {
       try {
         const response = await apiClient.getAll<Lesson[]>('lessons')
         if (response.success && response.data) {
+          console.log("getting lessons from useEffect: ", response.data)
           const lessonsData = transformLessonsData(response.data);
           setLessons(lessonsData);
         } else {
@@ -71,6 +72,7 @@ const Lessons: React.FC = () => {
   }
 
   const handleEditLesson = (lesson: Lesson): void => {
+    console.log("editing lesson: ", lesson)
     setEditingLesson(lesson)
     setShowEditForm(true)
   }
@@ -79,6 +81,7 @@ const Lessons: React.FC = () => {
     try {
       const response = await apiClient.getAll<Lesson[]>('lessons')
       if (response.success && response.data) {
+        console.log("lessons: ", response.data)
         const lessonsData = transformLessonsData(response.data);
         setLessons(lessonsData);
       }
