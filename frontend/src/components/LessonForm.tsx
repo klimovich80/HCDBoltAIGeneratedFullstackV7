@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { X } from 'lucide-react'
 import { apiClient } from '../lib/api'
 import {
@@ -8,7 +8,24 @@ import {
   User,
   ExtendedError
 } from '../types/index'
+import {
+  sanitizeInput,
+  validateFutureDate
+} from '../utils/security'
+import Button from './ui/Button'
+import Input from './ui/Input'
+import Select from './ui/Select'
+import Textarea from './ui/Textarea'
+import { useStyles } from '../hooks/useStyles'
 
+/**
+ * Форма для создания и редактирования уроков
+ * @param isOpen - Открыта ли форма
+ * @param onClose - Функция закрытия формы
+ * @param onSuccess - Функция при успешном сохранении
+ * @param lesson - Урок для редактирования (если режим редактирования)
+ * @param mode - Режим формы (create или edit)
+ */
 const LessonForm: React.FC<LessonFormProps> = ({
   isOpen,
   onClose,
@@ -35,38 +52,44 @@ const LessonForm: React.FC<LessonFormProps> = ({
   // Состояния для загрузки и ошибок
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
   
   // Состояния для списков данных
   const [instructors, setInstructors] = useState<User[]>([])
   const [members, setMembers] = useState<User[]>([])
   const [horses, setHorses] = useState<Horse[]>([])
   const [loadingData, setLoadingData] = useState<boolean>(true)
+  const styles = useStyles()
 
-  // Эффект для загрузки данных инструкторов, участников и лошадей
+  /**
+   * Загружает данные инструкторов, участников и лошадей
+   */
   useEffect(() => {
     const loadData = async (): Promise<void> => {
       try {
         setLoadingData(true)
 
-        // Загрузка инструкторов (тренеров)
-        const instructorsResponse = await apiClient.getAll<User>('users', { role: 'trainer' })
+        // Параллельная загрузка данных
+        const [instructorsResponse, membersResponse, horsesResponse] = await Promise.all([
+          apiClient.getAll<User>('users', { role: 'trainer' }),
+          apiClient.getAll<User>('users', { role: 'member' }),
+          apiClient.getAll<Horse>('horses')
+        ])
+
         if (instructorsResponse.success && instructorsResponse.data) {
           setInstructors(instructorsResponse.data)
         }
 
-        // Загрузка участников
-        const membersResponse = await apiClient.getAll<User>('users', { role: 'member' })
         if (membersResponse.success && membersResponse.data) {
           setMembers(membersResponse.data)
         }
 
-        // Загрузка лошадей
-        const horsesResponse = await apiClient.getAll<Horse>('horses')
         if (horsesResponse.success && horsesResponse.data) {
           setHorses(horsesResponse.data)
         }
       } catch (error) {
         console.error('Не удалось загрузить данные:', error)
+        setError('Не удалось загрузить необходимые данные')
       } finally {
         setLoadingData(false)
       }
@@ -78,7 +101,9 @@ const LessonForm: React.FC<LessonFormProps> = ({
     }
   }, [isOpen])
 
-  // Эффект для обновления данных формы при изменении урока или режима
+  /**
+   * Обновляет данные формы при изменении урока или режима
+   */
   useEffect(() => {
     if (lesson && mode === 'edit') {
       // Форматирование даты для поля ввода datetime-local
@@ -102,10 +127,9 @@ const LessonForm: React.FC<LessonFormProps> = ({
       })
     } else if (mode === 'create') {
       // Сброс формы для режима создания
-      // Установка даты на 1 день вперед от текущего времени
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
-      futureDate.setHours(10, 0, 0, 0); // Установка времени на 10:00
+      futureDate.setHours(10, 0, 0, 0);
       const formattedDate = futureDate.toISOString().slice(0, 16);
 
       setFormData({
@@ -125,47 +149,90 @@ const LessonForm: React.FC<LessonFormProps> = ({
     }
   }, [lesson, mode])
 
-  // Обработчик отправки формы
+  /**
+   * Валидирует данные формы
+   * @returns Массив ошибок валидации
+   */
+  const validateForm = useCallback((): string[] => {
+    const errors: string[] = []
+    
+    if (!formData.title.trim()) {
+      errors.push('Название урока обязательно')
+    }
+    
+    if (!formData.instructor_id) {
+      errors.push('Инструктор обязателен')
+    }
+    
+    if (!formData.member_id) {
+      errors.push('Участник обязателен')
+    }
+    
+    if (!formData.scheduled_date) {
+      errors.push('Дата урока обязательна')
+    } else if (!validateFutureDate(formData.scheduled_date)) {
+      errors.push('Дата урока не может быть в прошлом')
+    }
+    
+    if (formData.duration_minutes < 15) {
+      errors.push('Продолжительность урока должна быть не менее 15 минут')
+    }
+    
+    if (formData.cost < 0) {
+      errors.push('Стоимость не может быть отрицательной')
+    }
+    
+    return errors
+  }, [formData])
+
+  /**
+   * Обработчик отправки формы
+   * @param e Событие формы
+   */
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    console.log('Форма отправлена')
-    console.log(formData)
+    setSuccessMessage('')
+
+    // Валидация формы
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(', '))
+      setLoading(false)
+      return
+    }
 
     try {
-      // Проверка обязательных полей
-      if (!formData.title.trim()) {
-        throw new Error('Название урока обязательно')
-      }
-      if (!formData.instructor_id) {
-        throw new Error('Инструктор обязателен')
-      }
-      if (!formData.member_id) {
-        throw new Error('Участник обязателен')
-      }
-      if (!formData.scheduled_date) {
-        throw new Error('Дата урока обязательна')
+      // Санитизация вводимых данных
+      const sanitizedData = {
+        ...formData,
+        title: sanitizeInput(formData.title),
+        description: sanitizeInput(formData.description),
+        notes: sanitizeInput(formData.notes)
       }
 
-      // Преобразование числовых полей к нужному типу
+      // Преобразование числовых полей
       const submitData = {
-        ...formData,
+        ...sanitizedData,
         cost: Number(formData.cost),
         duration_minutes: Number(formData.duration_minutes)
       }
 
       if (mode === 'edit' && lesson) {
         await apiClient.updateLesson(lesson._id, submitData)
+        setSuccessMessage('Занятие успешно обновлено!')
       } else {
         await apiClient.createLesson(submitData)
+        setSuccessMessage('Занятие успешно создано!')
       }
 
       // Вызов колбэков при успешной отправке
-      onSuccess()
-      onClose()
+      setTimeout(() => {
+        onSuccess()
+        onClose()
+      }, 1500)
     } catch (err: unknown) {
-      // Обработка ошибок
       console.error('Ошибка отправки формы:', err)
       
       let errorMessage = 'Произошла неизвестная ошибка';
@@ -185,17 +252,28 @@ const LessonForm: React.FC<LessonFormProps> = ({
     }
   }
 
-  // Обработчик изменения полей формы
+  /**
+   * Обработчик изменения полей формы
+   * @param e Событие изменения элемента формы
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target
-    console.log('Поле ${name} изменено:', name, value)
     setFormData(prev => ({
       ...prev,
       [name]: name === 'duration_minutes' || name === 'cost'
-        ? parseFloat(value) || 0  // Преобразование числовых значений
+        ? parseFloat(value) || 0
         : value
     }))
   }
+
+  /**
+   * Обработчик закрытия формы
+   */
+  const handleClose = useCallback(() => {
+    setError('')
+    setSuccessMessage('')
+    onClose()
+  }, [onClose])
 
   // Не отображать компонент, если форма закрыта
   if (!isOpen) return null
@@ -208,13 +286,13 @@ const LessonForm: React.FC<LessonFormProps> = ({
           <h2 className="text-xl font-semibold text-gray-900">
             {mode === 'edit' ? 'Редактировать занятие' : 'Создать занятие'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+          <Button
+            onClick={handleClose}
+            variant="ghost"
+            icon={X}
+            disabled={loading}
             aria-label="Закрыть"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          />
         </div>
 
         {/* Индикатор загрузки или форма */}
@@ -227,8 +305,15 @@ const LessonForm: React.FC<LessonFormProps> = ({
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Отображение ошибок */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className={styles.alert('error')}>
+                <p className="text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Отображение успешных сообщений */}
+            {successMessage && (
+              <div className={styles.alert('success')}>
+                <p className="text-sm">{successMessage}</p>
               </div>
             )}
 
@@ -236,246 +321,230 @@ const LessonForm: React.FC<LessonFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Название урока */}
               <div className="md:col-span-2">
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Название занятия *
-                </label>
-                <input
-                  type="text"
+                <Input
+                  label="Название занятия *"
                   id="title"
                   name="title"
                   required
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Например: Урок выездки для начинающих"
+                  maxLength={100}
                 />
               </div>
 
               {/* Выбор инструктора */}
               <div>
-                <label htmlFor="instructor_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Инструктор *
-                </label>
-                <select
+                <Select
+                  label="Инструктор *"
                   id="instructor_id"
                   name="instructor_id"
                   required
                   value={formData.instructor_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Выберите инструктора</option>
-                  {instructors.map((instructor) => (
-                    <option key={instructor._id} value={instructor._id}>
-                      {instructor.first_name} {instructor.last_name}
-                    </option>
-                  ))}
-                </select>
+                  disabled={instructors.length === 0}
+                  options={[
+                    { value: '', label: 'Выберите инструктора' },
+                    ...instructors.map(instructor => ({
+                      value: instructor._id,
+                      label: `${instructor.first_name} ${instructor.last_name}`
+                    }))
+                  ]}
+                />
+                {instructors.length === 0 && (
+                  <p className="mt-1 text-sm text-yellow-600">Нет доступных инструкторов</p>
+                )}
               </div>
 
               {/* Выбор участника */}
               <div>
-                <label htmlFor="member_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Участник *
-                </label>
-                <select
+                <Select
+                  label="Участник *"
                   id="member_id"
                   name="member_id"
                   required
                   value={formData.member_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Выберите участника</option>
-                  {members.map((member) => (
-                    <option key={member._id} value={member._id}>
-                      {member.first_name} {member.last_name}
-                    </option>
-                  ))}
-                </select>
+                  disabled={members.length === 0}
+                  options={[
+                    { value: '', label: 'Выберите участника' },
+                    ...members.map(member => ({
+                      value: member._id,
+                      label: `${member.first_name} ${member.last_name}`
+                    }))
+                  ]}
+                />
+                {members.length === 0 && (
+                  <p className="mt-1 text-sm text-yellow-600">Нет доступных участников</p>
+                )}
               </div>
 
               {/* Выбор лошади */}
               <div>
-                <label htmlFor="horse_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Лошадь
-                </label>
-                <select
+                <Select
+                  label="Лошадь"
                   id="horse_id"
                   name="horse_id"
                   value={formData.horse_id}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Выберите лошадь (необязательно)</option>
-                  {horses.map((horse) => (
-                    <option key={horse._id} value={horse._id}>
-                      {horse.name} ({horse.breed})
-                    </option>
-                  ))}
-                </select>
+                  disabled={horses.length === 0}
+                  options={[
+                    { value: '', label: 'Выберите лошадь (необязательно)' },
+                    ...horses.map(horse => ({
+                      value: horse._id,
+                      label: `${horse.name} (${horse.breed})`
+                    }))
+                  ]}
+                />
+                {horses.length === 0 && (
+                  <p className="mt-1 text-sm text-yellow-600">Нет доступных лошадей</p>
+                )}
               </div>
 
               {/* Тип урока */}
               <div>
-                <label htmlFor="lesson_type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Тип занятия *
-                </label>
-                <select
+                <Select
+                  label="Тип занятия *"
                   id="lesson_type"
                   name="lesson_type"
                   required
                   value={formData.lesson_type}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="private">Индивидуальное</option>
-                  <option value="group">Групповое</option>
-                  <option value="training">Тренировка</option>
-                </select>
+                  options={[
+                    { value: 'private', label: 'Индивидуальное' },
+                    { value: 'group', label: 'Групповое' },
+                    { value: 'training', label: 'Тренировка' }
+                  ]}
+                />
               </div>
 
               {/* Дата и время урока */}
               <div>
-                <label htmlFor="scheduled_date" className="block text-sm font-medium text-gray-700 mb-2">
-                  Дата и время *
-                </label>
-                <input
-                  type="datetime-local"
+                <Input
+                  label="Дата и время *"
                   id="scheduled_date"
                   name="scheduled_date"
+                  type="datetime-local"
                   required
                   value={formData.scheduled_date}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  min={new Date().toISOString().slice(0, 16)}
                 />
               </div>
 
               {/* Продолжительность урока */}
               <div>
-                <label htmlFor="duration_minutes" className="block text-sm font-medium text-gray-700 mb-2">
-                  Продолжительность (минуты) *
-                </label>
-                <input
-                  type="number"
+                <Input
+                  label="Продолжительность (минуты) *"
                   id="duration_minutes"
                   name="duration_minutes"
+                  type="number"
                   required
                   min="15"
                   max="240"
+                  step="15"
                   value={formData.duration_minutes}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
               {/* Стоимость урока */}
               <div>
-                <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
-                  Стоимость (₽) *
-                </label>
-                <input
-                  type="number"
+                <Input
+                  label="Стоимость (₽) *"
                   id="cost"
                   name="cost"
+                  type="number"
                   required
                   min="0"
                   step="100"
                   value={formData.cost}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
 
               {/* Статус урока */}
               <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                  Статус
-                </label>
-                <select
+                <Select
+                  label="Статус"
                   id="status"
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="scheduled">Запланировано</option>
-                  <option value="completed">Завершено</option>
-                  <option value="cancelled">Отменено</option>
-                  <option value="no_show">Не явился</option>
-                </select>
+                  options={[
+                    { value: 'scheduled', label: 'Запланировано' },
+                    { value: 'completed', label: 'Завершено' },
+                    { value: 'cancelled', label: 'Отменено' },
+                    { value: 'no_show', label: 'Не явился' }
+                  ]}
+                />
               </div>
 
               {/* Статус оплаты */}
               <div>
-                <label htmlFor="payment_status" className="block text-sm font-medium text-gray-700 mb-2">
-                  Статус оплаты
-                </label>
-                <select
+                <Select
+                  label="Статус оплаты"
                   id="payment_status"
                   name="payment_status"
                   value={formData.payment_status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="pending">Ожидает оплаты</option>
-                  <option value="paid">Оплачено</option>
-                  <option value="overdue">Просрочено</option>
-                </select>
+                  options={[
+                    { value: 'pending', label: 'Ожидает оплаты' },
+                    { value: 'paid', label: 'Оплачено' },
+                    { value: 'overdue', label: 'Просрочено' }
+                  ]}
+                />
               </div>
             </div>
 
             {/* Описание урока */}
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Описание
-              </label>
-              <textarea
+              <Textarea
+                label="Описание"
                 id="description"
                 name="description"
                 rows={3}
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Дополнительная информация о занятии..."
+                maxLength={500}
               />
             </div>
 
             {/* Заметки */}
             <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Заметки
-              </label>
-              <textarea
+              <Textarea
+                label="Заметки"
                 id="notes"
                 name="notes"
                 rows={3}
                 value={formData.notes}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Заметки инструктора, особые требования..."
+                maxLength={500}
               />
             </div>
 
             {/* Кнопки действий */}
             <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <button
+              <Button
                 type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                variant="secondary"
+                onClick={handleClose}
+                disabled={loading}
               >
                 Отмена
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading
                   ? (mode === 'edit' ? 'Сохранение...' : 'Создание...')
                   : (mode === 'edit' ? 'Сохранить изменения' : 'Создать занятие')
                 }
-              </button>
+              </Button>
             </div>
           </form>
         )}
@@ -484,4 +553,4 @@ const LessonForm: React.FC<LessonFormProps> = ({
   )
 }
 
-export default LessonForm
+export default React.memo(LessonForm)

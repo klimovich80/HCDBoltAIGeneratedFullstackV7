@@ -1,17 +1,21 @@
+export type HorseGender = 'mare' | 'stallion' | 'gelding';
+export type HorseBoardingType = 'full' | 'partial' | 'pasture';
+export type HorseVaccinationStatus = 'current' | 'due' | 'overdue';
+export type HorseFormMode = 'create' | 'edit';
 export interface Horse {
   _id: string
   name: string
   breed: string
   age: number
-  gender: 'mare' | 'stallion' | 'gelding'
+  gender: HorseGender
   color: string
   markings?: string
   profileImage?: string
-  boardingType: 'full' | 'partial' | 'pasture'
+  boardingType: HorseBoardingType
   stallNumber?: string
   medicalNotes?: string
   dietaryRestrictions?: string
-  vaccinationStatus: 'current' | 'due' | 'overdue'
+  vaccinationStatus: HorseVaccinationStatus
   insuranceInfo?: string
   registrationNumber?: string
   lastVetVisit?: string
@@ -36,15 +40,15 @@ export interface HorseFormData {
   name: string
   breed: string
   age: number
-  gender: 'mare' | 'stallion' | 'gelding'
+  gender: HorseGender
   color: string
   markings?: string
   profileImage?: string
-  boardingType: 'full' | 'partial' | 'pasture'
+  boardingType: HorseBoardingType
   stallNumber?: string
   medicalNotes?: string
   dietaryRestrictions?: string
-  vaccinationStatus: 'current' | 'due' | 'overdue'
+  vaccinationStatus: HorseVaccinationStatus
   insuranceInfo?: string
   registrationNumber?: string
 }
@@ -54,5 +58,5 @@ export interface HorseFormProps {
   onClose: () => void
   onSuccess: () => void
   horse?: Horse | null
-  mode?: 'create' | 'edit'
+  mode?: HorseFormMode
 }

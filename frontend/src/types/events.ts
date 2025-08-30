@@ -1,8 +1,12 @@
+export type EventType = 'competition' | 'clinic' | 'social' | 'maintenance' | 'show';
+export type EventStatus = 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
+export type EventFormMode = 'create' | 'edit';
+
 export interface Event {
   _id: string
   title: string
   description?: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
+  eventType: EventType
   startDate: string
   endDate: string
   location?: string
@@ -14,9 +18,9 @@ export interface Event {
     email?: string
     phone?: string
   }
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled'
+  status: EventStatus
   requirements?: string
-  participants: any[]
+  participants: unknown[]
   createdAt?: string
   updatedAt?: string
   isActive?: boolean
@@ -31,7 +35,7 @@ export interface EventDetailProps {
 export interface EventFormData {
   title: string
   description?: string
-  eventType: 'competition' | 'clinic' | 'social' | 'maintenance' | 'show'
+  eventType: EventType
   startDate: string
   endDate: string
   location?: string
@@ -44,5 +48,5 @@ export interface EventFormProps {
   onClose: () => void
   onSuccess: () => void
   event?: Event | null
-  mode?: 'create' | 'edit'
+  mode?: EventFormMode
 }

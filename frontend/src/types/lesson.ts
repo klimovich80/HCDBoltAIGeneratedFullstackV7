@@ -1,3 +1,8 @@
+export type LessonStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show';
+export type LessonType = 'private' | 'group' | 'training';
+export type PaymentStatus = 'pending' | 'paid' | 'overdue';
+export type LessonFormMode = 'create' | 'edit';
+
 export interface Lesson {
   _id: string
   title: string
@@ -24,10 +29,10 @@ export interface Lesson {
   }
   scheduled_date: string
   duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+  lesson_type: LessonType
+  status: LessonStatus
   cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
+  payment_status: PaymentStatus
   notes?: string
   isActive?: boolean
   createdAt?: string
@@ -49,10 +54,10 @@ export interface LessonFormData {
   member_id: string
   scheduled_date: string
   duration_minutes: number
-  lesson_type: 'private' | 'group' | 'training'
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+  lesson_type: LessonType
+  status: LessonStatus
   cost: number
-  payment_status: 'pending' | 'paid' | 'overdue'
+  payment_status: PaymentStatus
   notes?: string
 }
 
@@ -61,5 +66,5 @@ export interface LessonFormProps {
   onClose: () => void
   onSuccess: () => void
   lesson?: Lesson | null
-  mode?: 'create' | 'edit'
+  mode?: LessonFormMode
 }

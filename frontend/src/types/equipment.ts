@@ -1,3 +1,6 @@
+export type EquipmentCategory = 'saddle' | 'bridle' | 'halter' | 'blanket' | 'boot' | 'grooming' | 'other';
+export type EquipmentCondition = 'excellent' | 'good' | 'fair' | 'poor';
+export type EquipmentFormMode = 'create' | 'edit' | 'maintenance';
 export interface EquipmentPhoto {
   _id: string;
   url: string;
@@ -9,11 +12,11 @@ export interface EquipmentPhoto {
 export interface Equipment {
   _id: string;
   name: string;
-  category: 'saddle' | 'bridle' | 'halter' | 'blanket' | 'boot' | 'grooming' | 'other';
+  category: EquipmentCategory
   brand?: string;
   model?: string;
   size?: string;
-  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  condition: EquipmentCondition
   purchaseDate?: string;
   cost?: number;
   currentValue?: number;
@@ -35,11 +38,11 @@ export interface Equipment {
 
 export interface EquipmentFormData {
   name: string;
-  category: 'saddle' | 'bridle' | 'halter' | 'blanket' | 'boot' | 'grooming' | 'other';
+  category: EquipmentCategory
   brand?: string;
   model?: string;
   size?: string;
-  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  condition: EquipmentCondition
   purchaseDate?: string;
   cost?: number;
   currentValue?: number;
@@ -56,7 +59,7 @@ export interface EquipmentFormProps {
   onClose: () => void;
   onSuccess: () => void;
   equipment?: Equipment | null;
-  mode?: 'create' | 'edit' | 'maintenance';
+  mode?: EquipmentFormMode
 }
 export interface EquipmentDetailProps {
   isOpen: boolean

@@ -1,3 +1,7 @@
+export type PaymentStatus = 'pending' | 'paid' | 'overdue' | 'cancelled';
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online';
+export type PaymentType = 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other';
+export type PaymentFormMode = 'create' | 'edit';
 export interface Payment {
   _id: string
   user: {
@@ -8,9 +12,9 @@ export interface Payment {
     phone?: string
   }
   amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
+  payment_type: PaymentType
+  payment_method: PaymentMethod
+  status: PaymentStatus
   due_date: string
   paid_date?: string
   invoice_number?: string
@@ -28,9 +32,9 @@ export interface PaymentDetailProps {
 export interface PaymentFormData {
   user_id: string
   amount: number
-  payment_type: 'lesson' | 'boarding' | 'event' | 'membership' | 'equipment' | 'other'
-  payment_method: 'cash' | 'card' | 'bank_transfer' | 'online'
-  status: 'pending' | 'paid' | 'overdue' | 'cancelled'
+  payment_type: PaymentType
+  payment_method: PaymentMethod
+  status: PaymentStatus
   due_date: string
   paid_date?: string
   description?: string
@@ -41,5 +45,5 @@ export interface PaymentFormProps {
   onClose: () => void
   onSuccess: () => void
   payment?: Payment | null
-  mode?: 'create' | 'edit'
+  mode?: PaymentFormMode
 }

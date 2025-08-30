@@ -17,46 +17,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
- // В AuthProvider
-useEffect(() => {
-  const initAuth = async () => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      apiClient.setToken(token)
-      try {
-        const response = await apiClient.getCurrentUser()
-        if (response.success) {
-          setUser(response.data || response.user || null)
-        } else {
-          localStorage.removeItem('token')
-          apiClient.setToken(null)
+  useEffect(() => {
+    const initAuth = async () => {
+      // Используем правильный ключ для токена
+      const token = localStorage.getItem('authToken')
+      if (token) {
+        // Устанавливаем токен в API клиенте
+        apiClient.setTokens(token)
+        try {
+          const response = await apiClient.getCurrentUser()
+          if (response.success) {
+            setUser(response.data || response.user || null)
+          } else {
+            // Очищаем токен при неудачной проверке
+            localStorage.removeItem('authToken')
+            apiClient.setTokens(null)
+          }
+        } catch (error) {
+          console.error('Failed to get user:', error)
+          localStorage.removeItem('authToken')
+          apiClient.setTokens(null)
+        } finally {
+          setLoading(false)
         }
-      } catch (error) {
-        console.error('Failed to get user:', error)
-        localStorage.removeItem('token')
-        apiClient.setToken(null)
-      } finally {
+      } else {
         setLoading(false)
       }
-    } else {
-      setLoading(false)
     }
-  }
 
-  initAuth()
-}, [])
+    initAuth()
+  }, [])
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
       const response = await apiClient.login(email, password)
       
-      if (response.success) {
-        // Правильное извлечение пользователя из ответа
-        const user = response.user || (response as any).data?.user
-        if (user) {
-          setUser(user)
+      if (response.success && response.token) {
+        // Сохраняем токен
+        apiClient.setTokens(response.token)
+        localStorage.setItem('authToken', response.token)
+        
+        // Получаем информацию о пользователе
+        const userResponse = await apiClient.getCurrentUser()
+        if (userResponse.success) {
+          setUser(userResponse.data || userResponse.user || null)
         } else {
-          throw new Error('User data not found in response')
+          throw new Error('Failed to get user information')
         }
       } else {
         throw new Error(response.message || 'Login failed')
@@ -68,8 +74,9 @@ useEffect(() => {
   }
 
   const logout = () => {
-    apiClient.setToken(null)
-    localStorage.removeItem('token')
+    // Очищаем токен
+    apiClient.setTokens(null)
+    localStorage.removeItem('authToken')
     setUser(null)
   }
 

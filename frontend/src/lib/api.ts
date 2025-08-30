@@ -1,4 +1,3 @@
-// api.ts
 import { config } from "../config";
 import {
   Lesson,
@@ -9,8 +8,9 @@ import {
   LoginResponseData,
   DashboardStats
 } from "../types/index";
+import { sanitizeEmail, sanitizePhone } from "../utils/security";
 
-// Деструктуризация конфигурации API для удобства использования
+// Деструктуризация конфигурации API
 const {
   api: {
     baseUrl: apiBaseUrl,
@@ -18,96 +18,351 @@ const {
       login: loginUrl,
       register: registerUrl,
       me: meUrl,
-      lessons: lessonsUrl
+      lessons: lessonsUrl,
+      refresh: refreshUrl
     }
   }
 } = config;
 
+// Интерфейс для кэшированных данных
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+  expiresIn: number;
+}
+
 class ApiClient {
   private baseURL: string;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private cache: Map<string, CachedData<any>> = new Map();
+  private requestQueue: (() => Promise<any>)[] = [];
+  private processingQueue = false;
+  private lastRequestTime = 0;
+  private readonly MIN_REQUEST_INTERVAL = 100; // Минимальный интервал между запросами
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    // При инициализации проверяем наличие токена в localStorage
-    this.token = localStorage.getItem('token');
+    // Загрузка токенов из localStorage при инициализации
+    this.token = localStorage.getItem('authToken');
+    this.refreshToken = localStorage.getItem('refreshToken');
   }
 
-  // Установка/удаление токена аутентификации
-  setToken(token: string | null): void {
-    this.token = token;
-    if (token) {
-      localStorage.setItem('token', token);
-    } else {
-      localStorage.removeItem('token');
-    }
+  /**
+   * Устанавливает или удаляет токены аутентификации
+   * @param token Токен доступа
+   * @param refreshToken Токен обновления
+   */
+  public setTokens(token: string | null, refreshToken?: string | null): void {
+  this.token = token;
+  
+  if (refreshToken !== undefined) {
+    this.refreshToken = refreshToken;
   }
-
-  // Базовый метод для выполнения HTTP-запросов
-private async request<T>(
-  endpoint: string,
-  options: RequestInit = {},
-  timeout = 8000
-): Promise<ServerResponse<T>> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
-  const url = `${this.baseURL}${endpoint}`;
-
-  // Создаем объект заголовков
-  const headers: HeadersInit = {
-    // Добавляем Authorization заголовок если есть токен
-    ...(this.token && { Authorization: `Bearer ${this.token}` }),
-    // Добавляем Content-Type только если тело не FormData
-    ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
-    // Добавляем пользовательские заголовки
-    ...options.headers,
-  };
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers, // Используем созданные заголовки
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return {
-      success: data.success ?? true,
-      data: data.data ?? data,
-      message: data.message,
-      pagination: data.pagination,
-      token: data.token,
-      user: data.user
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Request timeout');
-      }
-      throw error;
-    }
-    throw new Error('Unknown error occurred');
+  
+  if (token) {
+    localStorage.setItem('authToken', token);
+  } else {
+    localStorage.removeItem('authToken');
+  }
+  
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  } else if (refreshToken === null) {
+    localStorage.removeItem('refreshToken');
   }
 }
 
-  // Обработка ответов аутентификации (логин/регистрация)
+  /**
+   * Декодирует JWT токен для извлечения информации
+   * @param token JWT токен
+   * @returns Декодированные данные токена или null
+   */
+  private decodeJWT(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch (error) {
+      console.error('Ошибка декодирования JWT:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Проверяет, истек ли срок действия токена
+   * @param token JWT токен
+   * @returns true если токен истек
+   */
+  private isTokenExpired(token: string): boolean {
+    const decoded = this.decodeJWT(token);
+    if (!decoded || !decoded.exp) return true;
+    return Date.now() >= decoded.exp * 1000;
+  }
+
+  /**
+   * Обновляет токен доступа с помощью токена обновления
+   * @returns true если токен успешно обновлен
+   */
+  private async refreshAuthToken(): Promise<boolean> {
+    if (!this.refreshToken) return false;
+    
+    try {
+      const response = await fetch(`${this.baseURL}${refreshUrl}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: this.refreshToken }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        this.setTokens(data.token, data.refreshToken);
+        return true;
+      }
+    } catch (error) {
+      console.error('Ошибка обновления токена:', error);
+    }
+    
+    // Если обновление не удалось, выполняем выход
+    this.logout();
+    return false;
+  }
+
+  /**
+   * Обрабатывает очередь запросов для соблюдения лимитов
+   */
+  private async processQueue(): Promise<void> {
+    if (this.processingQueue || this.requestQueue.length === 0) return;
+    
+    this.processingQueue = true;
+    
+    while (this.requestQueue.length > 0) {
+      const now = Date.now();
+      const timeSinceLastRequest = now - this.lastRequestTime;
+      
+      // Соблюдаем минимальный интервал между запросами
+      if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+        await new Promise(resolve => 
+          setTimeout(resolve, this.MIN_REQUEST_INTERVAL - timeSinceLastRequest)
+        );
+      }
+      
+      const request = this.requestQueue.shift();
+      if (request) {
+        this.lastRequestTime = Date.now();
+        try {
+          await request();
+        } catch (error) {
+          console.error('Ошибка выполнения запроса из очереди:', error);
+        }
+      }
+    }
+    
+    this.processingQueue = false;
+  }
+
+  /**
+   * Добавляет запрос в очередь на выполнение
+   * @param request Функция запроса
+   * @returns Промис с результатом запроса
+   */
+  private enqueueRequest<T>(request: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      this.requestQueue.push(async () => {
+        try {
+          const result = await request();
+          resolve(result);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      
+      this.processQueue();
+    });
+  }
+
+  /**
+   * Базовый метод для выполнения HTTP-запросов
+   * @param endpoint Конечная точка API
+   * @param options Опции запроса
+   * @param retries Количество повторных попыток
+   * @param timeout Таймаут запроса
+   * @returns Ответ сервера
+   */
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+    retries = 2,
+    timeout = 10000
+  ): Promise<ServerResponse<T>> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const url = `${this.baseURL}${endpoint}`;
+    const requestKey = `${options.method || 'GET'}:${url}`;
+
+    // Проверяем, есть ли уже выполняющийся аналогичный запрос
+    if (this.pendingRequests.has(requestKey)) {
+      return this.pendingRequests.get(requestKey);
+    }
+
+    // Проверяем кэш для GET запросов
+    if (options.method === 'GET' || !options.method) {
+      const cached = this.cache.get(requestKey);
+      if (cached && cached.timestamp + cached.expiresIn > Date.now()) {
+        return {
+          success: true,
+          data: cached.data
+        };
+      }
+    }
+
+    // Проверяем срок действия токена и обновляем при необходимости
+    if (this.token && this.isTokenExpired(this.token)) {
+      const refreshed = await this.refreshAuthToken();
+      if (!refreshed) {
+        throw new Error('Токен доступа истек и не может быть обновлен');
+      }
+    }
+
+    // Создаем объект заголовков
+    const headers: HeadersInit = {
+      // Добавляем Authorization заголовок если есть токен
+      ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      // Добавляем Content-Type только если тело не FormData
+      ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
+      // Добавляем защиту от CSRF
+      ...{ 'X-Requested-With': 'XMLHttpRequest' },
+      // Добавляем пользовательские заголовки
+      ...options.headers,
+    };
+
+    const requestPromise = this.enqueueRequest(async () => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const response = await fetch(url, {
+            ...options,
+            headers,
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          // Обработка ошибки аутентификации
+          if (response.status === 401 && attempt < retries) {
+            const refreshed = await this.refreshAuthToken();
+            if (refreshed) continue;
+          }
+
+          // Обработка ограничения запросов
+          if (response.status === 429 && attempt < retries) {
+            const delay = Math.pow(2, attempt) * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+
+          if (!response.ok) {
+            let errorMessage = `HTTP ошибка! статус: ${response.status}`;
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } catch (e) {
+              // Если ответ не JSON, используем текст ошибки
+              const errorText = await response.text();
+              if (errorText) errorMessage = errorText;
+            }
+            throw new Error(errorMessage);
+          }
+
+          const data = await response.json();
+          const result = {
+            success: data.success ?? true,
+            data: data.data ?? data,
+            message: data.message,
+            pagination: data.pagination,
+            token: data.token,
+            user: data.user
+          };
+
+          // Кэшируем GET запросы
+          if (options.method === 'GET' || !options.method) {
+            this.cache.set(requestKey, {
+              data: result.data,
+              timestamp: Date.now(),
+              expiresIn: 5 * 60 * 1000 // 5 минут
+            });
+          }
+
+          return result;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          if (attempt === retries) {
+            if (error instanceof Error) {
+              if (error.name === 'AbortError') {
+                throw new Error('Таймаут запроса');
+              }
+              throw error;
+            }
+            throw new Error('Произошла неизвестная ошибка');
+          }
+          
+          // Задержка перед повторной попыткой
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+      
+      throw new Error('Превышено максимальное количество попыток');
+    });
+
+    this.pendingRequests.set(requestKey, requestPromise);
+    
+    try {
+      return await requestPromise;
+    } finally {
+      this.pendingRequests.delete(requestKey);
+    }
+  }
+
+  /**
+   * Очищает весь кэш
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Очищает кэш для определенного endpoint
+   * @param endpoint Конечная точка API
+   * @param method HTTP метод
+   */
+  clearCacheForEndpoint(endpoint: string, method: string = 'GET'): void {
+    const requestKey = `${method}:${this.baseURL}${endpoint}`;
+    this.cache.delete(requestKey);
+  }
+
+  /**
+   * Обрабатывает ответы аутентификации (логин/регистрация)
+   * @param response Ответ сервера
+   * @returns Результат аутентификации
+   */
   private handleAuthResponse(response: ServerResponse<AuthResponse>): AuthResponse {
     if (response.success) {
       const responseData = response.data as LoginResponseData;
       const token = response.token || responseData?.token;
       const user = response.user || responseData?.user;
+      const refreshToken = (responseData as any)?.refreshToken;
 
       if (token) {
-        this.setToken(token);
-        return { success: true, token, user, message: response.message };
+        this.setTokens(token, refreshToken || this.refreshToken);
+        return { 
+          success: true, 
+          token, 
+          user, 
+          refreshToken,
+          message: response.message 
+        };
       }
     }
 
@@ -117,16 +372,29 @@ private async request<T>(
     };
   }
 
- async getDashboardStats(): Promise<ServerResponse<DashboardStats>> {
-  return this.request<DashboardStats>('/stats/dashboard');
-}
+  /**
+   * Получает статистику для dashboard
+   * @returns Статистика dashboard
+   */
+  async getDashboardStats(): Promise<ServerResponse<DashboardStats>> {
+    return this.request<DashboardStats>('/stats/dashboard');
+  }
 
-  // Методы аутентификации
+  /**
+   * Выполняет вход пользователя
+   * @param email Email пользователя
+   * @param password Пароль пользователя
+   * @returns Результат аутентификации
+   */
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
+      // Санитизация ввода
+      const sanitizedEmail = sanitizeEmail(email);
+      const sanitizedPassword = password.trim();
+      
       const response = await this.request<AuthResponse>(loginUrl, {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: sanitizedEmail, password: sanitizedPassword }),
       });
       return this.handleAuthResponse(response);
     } catch (error) {
@@ -137,11 +405,25 @@ private async request<T>(
     }
   }
 
+  /**
+   * Регистрирует нового пользователя
+   * @param userData Данные пользователя
+   * @returns Результат регистрации
+   */
   async register(userData: Partial<User>): Promise<AuthResponse> {
     try {
+      // Санитизация данных пользователя
+      const sanitizedData: Partial<User> = {
+        ...userData,
+        email: userData.email ? sanitizeEmail(userData.email) : undefined,
+        first_name: userData.first_name?.trim(),
+        last_name: userData.last_name?.trim(),
+        phone: userData.phone ? sanitizePhone(userData.phone) : undefined
+      };
+      
       const response = await this.request<AuthResponse>(registerUrl, {
         method: 'POST',
-        body: JSON.stringify(userData),
+        body: JSON.stringify(sanitizedData),
       });
       return this.handleAuthResponse(response);
     } catch (error) {
@@ -152,7 +434,10 @@ private async request<T>(
     }
   }
 
-  // Получение информации о текущем пользователе
+  /**
+   * Получает информацию о текущем пользователе
+   * @returns Данные пользователя или null
+   */
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await this.request<User>(meUrl);
@@ -163,23 +448,41 @@ private async request<T>(
     }
   }
 
-  // Выход из системы
+  /**
+   * Выполняет выход пользователя
+   */
   logout(): void {
-    this.setToken(null);
+    this.setTokens(null, null);
+    this.clearCache();
   }
 
-  // Универсальные CRUD-методы
+  /**
+   * Получает все записи ресурса
+   * @param resource Название ресурса
+   * @param params Параметры запроса
+   * @returns Список записей
+   */
   getAll<T>(resource: string, params?: Record<string, unknown>): Promise<ServerResponse<T[]>> {
-    console.log("getAll from api.ts", resource)
     const queryString = params ? `?${new URLSearchParams(params as Record<string, string>)}` : '';
     return this.request<T[]>(`/${resource}${queryString}`);
   }
 
+  /**
+   * Получает запись по ID
+   * @param resource Название ресурса
+   * @param id ID записи
+   * @returns Запись
+   */
   getById<T>(resource: string, id: string): Promise<ServerResponse<T>> {
-    console.log("getById from api.ts", resource, id)
     return this.request<T>(`/${resource}/${id}`);
   }
 
+  /**
+   * Создает новую запись
+   * @param resource Название ресурса
+   * @param data Данные для создания
+   * @returns Созданная запись
+   */
   create<T>(resource: string, data: unknown): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}`, {
       method: 'POST',
@@ -187,39 +490,73 @@ private async request<T>(
     });
   }
 
+  /**
+   * Обновляет запись
+   * @param resource Название ресурса
+   * @param id ID записи
+   * @param data Данные для обновления
+   * @returns Обновленная запись
+   */
   update<T>(resource: string, id: string, data: unknown): Promise<ServerResponse<T>> {
-    console.log("update from api.ts", resource, id, data)
     return this.request<T>(`/${resource}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
+  /**
+   * Удаляет запись
+   * @param resource Название ресурса
+   * @param id ID записи
+   * @returns Результат удаления
+   */
   delete<T>(resource: string, id: string): Promise<ServerResponse<T>> {
     return this.request<T>(`/${resource}/${id}`, {
       method: 'DELETE',
     });
   }
 
-  // Специализированные методы для работы с уроками
-  
-  // Форматирование даты для API
+  /**
+   * Форматирует дату для API
+   * @param dateString Строка с датой
+   * @returns Дата в формате ISO
+   */
   private formatDateForAPI(dateString: string): string {
-    if (dateString.length === 10) dateString += 'T00:00:00';
-    else if (dateString.length === 16) dateString += ':00';
+    if (!dateString) return '';
     
-    const dateObj = new Date(dateString);
-    return isNaN(dateObj.getTime()) ? dateString : dateObj.toISOString();
+    try {
+      let dateObj: Date;
+      
+      if (dateString.includes('T')) {
+        dateObj = new Date(dateString);
+      } else {
+        // Если время не указано, добавляем время по умолчанию (12:00:00)
+        dateObj = new Date(`${dateString}T12:00:00`);
+      }
+      
+      if (isNaN(dateObj.getTime())) {
+        throw new Error('Неверный формат даты');
+      }
+      
+      return dateObj.toISOString();
+    } catch (error) {
+      console.error('Ошибка форматирования даты:', error);
+      return dateString;
+    }
   }
 
-  // Создание урока
+  /**
+   * Создает новый урок
+   * @param lessonData Данные урока
+   * @returns Созданный урок
+   */
   async createLesson(lessonData: LessonFormData): Promise<ServerResponse<Lesson>> {
     const transformedData = {
       title: lessonData.title,
       description: lessonData.description,
       instructor: lessonData.instructor_id,
       member: lessonData.member_id,
-      scheduled_date: lessonData.scheduled_date ? this.formatDateForAPI(lessonData.scheduled_date) : undefined,
+      scheduled_date: this.formatDateForAPI(lessonData.scheduled_date),
       duration_minutes: lessonData.duration_minutes,
       lesson_type: lessonData.lesson_type,
       cost: lessonData.cost,
@@ -229,15 +566,24 @@ private async request<T>(
       ...(lessonData.horse_id && { horse: lessonData.horse_id })
     };
 
-    return this.request<Lesson>(lessonsUrl, {
+    const response = await this.request<Lesson>(lessonsUrl, {
       method: 'POST',
       body: JSON.stringify(transformedData),
     });
+    
+    // Очищаем кэш для уроков после создания нового
+    this.clearCacheForEndpoint(lessonsUrl, 'GET');
+    
+    return response;
   }
 
-  // Обновление урока
+  /**
+   * Обновляет урок
+   * @param id ID урока
+   * @param lessonData Данные урока
+   * @returns Обновленный урок
+   */
   async updateLesson(id: string, lessonData: Partial<LessonFormData>): Promise<ServerResponse<Lesson>> {
-    console.log("updating lesson from api.ts", lessonData)
     const transformedData: Record<string, unknown> = {};
 
     Object.entries(lessonData).forEach(([key, value]) => {
@@ -248,10 +594,16 @@ private async request<T>(
       }
     });
 
-    return this.request<Lesson>(`${lessonsUrl}/${id}`, {
+    const response = await this.request<Lesson>(`${lessonsUrl}/${id}`, {
       method: 'PUT',
       body: JSON.stringify(transformedData),
     });
+    
+    // Очищаем кэш для этого урока и списка уроков
+    this.clearCacheForEndpoint(lessonsUrl, 'GET');
+    this.clearCacheForEndpoint(`${lessonsUrl}/${id}`, 'GET');
+    
+    return response;
   }
 }
 

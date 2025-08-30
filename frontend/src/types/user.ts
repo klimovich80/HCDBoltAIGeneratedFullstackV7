@@ -1,11 +1,14 @@
+export type UserFormMode = 'create' | 'edit';
+export type UserRole = 'admin' | 'trainer' | 'member' | 'guest';
+export type UserMemmberShipTier = 'basic' | 'premium' | 'elite';
 export interface User {
   _id: string
   first_name: string
   last_name: string
   email: string
   phone?: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  membershipTier?: 'basic' | 'premium' | 'elite'
+  role: UserRole
+  membershipTier?: UserMemmberShipTier
   emergencyContactName?: string
   emergencyContactPhone?: string
   emergencyContactRelationship?: string
@@ -27,7 +30,7 @@ export interface UserFormProps {
   onClose: () => void
   onSuccess: () => void
   user?: User | null
-  mode?: 'create' | 'edit'
+  mode?: UserFormMode
 }
 
 export interface UserFormData {
@@ -36,8 +39,8 @@ export interface UserFormData {
   email: string
   password?: string
   phone?: string
-  role: 'admin' | 'trainer' | 'member' | 'guest'
-  membershipTier?: 'basic' | 'premium' | 'elite'
+  role: UserRole
+  membershipTier?: UserMemmberShipTier
   emergencyContactName?: string
   emergencyContactPhone?: string
   emergencyContactRelationship?: string
